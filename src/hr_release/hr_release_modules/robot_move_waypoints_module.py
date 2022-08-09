@@ -1,8 +1,7 @@
 import rospy, actionlib
 
-from artificial_hands_py.robot_commander.robot_commander import RobotCommander
-
 from hr_release.msg import *
+from hr_release.robot_commander import RobotCommander
 
 class RobotMoveWaypointsModule(RobotCommander):
   sleep_dur = rospy.Duration(0.2)
@@ -44,6 +43,7 @@ class RobotMoveWaypointsModule(RobotCommander):
       rospy.sleep(self.sleep_dur)
 
     # stop controllers
+    rospy.sleep(self.sleep_dur)
     self.arm.pause_all_controllers()
     self.move_as.set_succeeded(self.move_result)
 

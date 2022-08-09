@@ -6,10 +6,10 @@ import rospy, actionlib
 import tf, tf.transformations as ts
 from cartesian_control_msgs.msg import CartesianTrajectoryPoint
 
-from artificial_hands_py.robot_commander.robot_commander import RobotCommander
 from artificial_hands_py.artificial_hands_py_base import matrix_to_pose, pose_to_matrix
 
 from hr_release.msg import *
+from hr_release.robot_commander import RobotCommander
 
 class ObjectRecognitionModule(RobotCommander):
   sleep_dur = rospy.Duration(0.5)
@@ -47,8 +47,7 @@ class ObjectRecognitionModule(RobotCommander):
     # perform estimate trajectory
     self.estimate_trajectory()
 
-    # get wrist_dynamics_module to idle and build the object inertial model
-    self.wrist_dyn.stop_loop()
+    # build the object inertial model
     self.wrist_dyn.build_model()
 
     # stop controllers
@@ -116,6 +115,8 @@ class ObjectRecognitionModule(RobotCommander):
     self.arm.set_pose_target(matrix_to_pose(P0))
     
     rate = rospy.Rate(1/dt)
+
+    stop = False
         
     Q = pose_to_matrix(self.arm.get_current_frame().pose)
 
@@ -150,6 +151,10 @@ class ObjectRecognitionModule(RobotCommander):
       target.acceleration.angular.z = ydd[5]
 
       self.arm.forward_target(target)
+
+      if not stop and t > Ts:
+        self.wrist_dyn.stop_loop() # only half of the trajectory is required for object recognition
+        stop = True
       
       rate.sleep()
 

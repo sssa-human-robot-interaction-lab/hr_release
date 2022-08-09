@@ -8,7 +8,9 @@
 
   <!-- Bringup the FT sensor (fake or real hw)-->
   <node if="$(arg fake_ft)" pkg="artificial_hands_nodes" type="fake_ft_sensor_node.py" name="fake_ft_sensor" output="screen"/>
-  <include unless="$(arg fake_ft)" file="$(find artificial_hands_bringup)/launch/onrobot_ft_sensor_bringup.launch"/>
+  <include unless="$(arg fake_ft)" file="$(find artificial_hands_bringup)/launch/onrobot_ft_sensor_bringup.launch">
+    <arg name="address" value="192.168.10.102" />
+  </include>
 
   <!-- Load @fraiori0 dmp_extended node -->
   <include file="$(find dmp_extended)/launch/dmp_node.launch"/>

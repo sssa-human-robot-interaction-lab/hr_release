@@ -20,6 +20,7 @@ add_action_files(
   ObjectRecognition.action
   RobotHumanHandoverReaching.action
   RobotMoveWaypoints.action
+  VisionSystemCalibration.action
 )
 
 generate_messages(
@@ -40,7 +41,7 @@ include_directories(
 )
 
 catkin_install_python(PROGRAMS
-  scripts/handover_release_test_node.py
+  scripts/handover_release_node.py
   scripts/low_level_engine_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

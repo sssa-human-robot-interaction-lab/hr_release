@@ -5,9 +5,9 @@ import tf.transformations as ts
 from geometry_msgs.msg import Pose
 
 from artificial_hands_py.artificial_hands_py_base import list_to_quat, quat_to_list
-from artificial_hands_py.robot_commander.robot_commander import RobotCommander
 
 from hr_release.msg import *
+from hr_release.robot_commander import RobotCommander
 
 class ForceTorqueSensorCalibrationModule(RobotCommander):
   sleep_dur = rospy.Duration(0.5)
@@ -96,7 +96,7 @@ class ForceTorqueSensorCalibrationModule(RobotCommander):
     self.wrist_dyn.stop_loop()
 
     # stop controllers
-    self.arm.wait_for_trajectory_monitor()
+    rospy.sleep(self.sleep_dur)
     self.arm.pause_all_controllers()
     self.calib_as.set_succeeded(self.calib_result)
     

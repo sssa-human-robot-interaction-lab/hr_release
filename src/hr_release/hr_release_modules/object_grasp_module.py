@@ -1,8 +1,7 @@
 import rospy, actionlib
 
-from artificial_hands_py.robot_commander.robot_commander import RobotCommander
-
 from hr_release.msg import *
+from hr_release.robot_commander import RobotCommander
 
 class ObjectGraspModule(RobotCommander):
   sleep_dur = rospy.Duration(0.5)
@@ -48,6 +47,7 @@ class ObjectGraspModule(RobotCommander):
     self.arm.set_pose_target(goal.back)
 
     # stop controllers
+    rospy.sleep(self.sleep_dur)
     self.arm.pause_all_controllers()
     self.grasp_as.set_succeeded(self.grasp_result)
 

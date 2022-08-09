@@ -6,9 +6,8 @@ from std_msgs.msg import Float64
 from geometry_msgs.msg import Pose
 from cartesian_control_msgs.msg import CartesianTrajectoryPoint
 
-from artificial_hands_py.robot_commander.robot_commander import RobotCommander
-
 from hr_release.msg import *
+from hr_release.robot_commander import RobotCommander
 
 class RobotHumanHandoverReachingModule(RobotCommander):
   sleep_dur = rospy.Duration(0.5)
@@ -21,9 +20,12 @@ class RobotHumanHandoverReachingModule(RobotCommander):
     self.r2h_handv_as = actionlib.SimpleActionServer('/robot_to_human_handover_reaching',RobotHumanHandoverReachingAction,execute_cb=self.r2h_handover_cb,auto_start=False)
 
     trg_sub = rospy.Subscriber("handover_target_point",CartesianTrajectoryPoint,callback=self.handover_target_cb)
-    ratio_sub = rospy.Subscriber("handover_target_ratio",Float64,callback=self.handover_target_cb)
+    
+    # this value controls the release duration
+    self.open_vel : float
 
-    self.target = Pose()
+    # start by sending the actual frame to online trajectory generator
+    self.target = self.arm.get_current_frame().pose
 
     self.r2h_handv_as.start()
 
@@ -43,7 +45,7 @@ class RobotHumanHandoverReachingModule(RobotCommander):
     
     # move to start position
     self.arm.set_track_ratio(1)
-    self.arm.set_track_t_go(0.1)
+    self.arm.set_track_t_go(2)
     self.arm.set_stop_time(goal.stop_time)
     self.arm.set_max_accel(0.2) # use lower acceleration to reach the home position
     self.arm.set_max_angaccel(0.2)
@@ -51,37 +53,32 @@ class RobotHumanHandoverReachingModule(RobotCommander):
     self.arm.switch_to_cartesian_controller('cartesian_eik_position_controller')
     self.arm.set_pose_target(goal.home)
 
-    # prepare hand to open in a separate thread
-    self.hand.switch_to_controller('mia_hand_joint_group_vel_controller')
-    open_thread = Thread(target=self.hand.open,args=[False,3])
-
     # change to online taget generator
     self.arm.set_mj_traj_generator()
-    # self.arm.set_max_accel(goal.max_accel) # not rqeuired for mj
-    # self.arm.set_max_angaccel(goal.max_angaccel)
     rospy.sleep(self.sleep_dur)
-
-    # go to target pose and monitor execution
-    self.arm.set_pose_target(goal.target,False)
-    self.arm.update_trajectory_monitor()
     
-    # wait at least for half of the nominal trajectory, then start to trigger
-    rate = rospy.Rate(40)
-    while self.arm.percentage < 50:
+    # reaching fixed distance to target threshold, then start to trigger
+    rate = rospy.Rate(30)
+    while self.distance > 1e-2 and self.distance < 0.4:
+      self.arm.set_pose_target(goal.target,False)
+      self.compute_target_distance()
       rate.sleep()  
     self.wrist_dyn.set_trigger_dynamics()
 
-    # update online target according to human hand pose, break on detection
-    self.wrist_dyn.detection.dynamic_contact = False
-    # while self.arm.percentage < 100:
-    while not self.wrist_dyn.detection.dynamic_contact:
-      # self.arm.set_pose_target(self.target)
-      # self.arm.update_trajectory_monitor()
-      rate.sleep()
-      
-    # open the hand, stop arm immediately at the end of the loop
+    # prepare hand to open in a separate thread
+    self.hand.switch_to_controller('mia_hand_joint_group_vel_controller')
+    open_thread = Thread(target=self.release,args=[False])
     open_thread.start()
-    self.arm.stop()
+    
+    # update online target according to human hand pose, stop arm when near to target
+    while self.distance > 0.2: 
+      self.arm.set_pose_target(goal.target,False)
+      self.compute_target_distance()
+      rate.sleep() 
+    self.arm.stop(wait = False)
+      
+    # wait until hand is open
+    open_thread.join()
 
     # wait a bit before set wrist_dynamics_module to idle
     rospy.sleep(rospy.Duration(goal.sleep))
@@ -92,15 +89,24 @@ class RobotHumanHandoverReachingModule(RobotCommander):
     self.arm.set_max_accel(0.2) # use lower accelration to reach the back position
     self.arm.set_max_angaccel(0.2)
     self.arm.set_harmonic_traj_generator()
-    self.arm.switch_to_cartesian_controller('cartesian_motion_position_controller')
+    self.arm.switch_to_cartesian_controller('cartesian_eik_position_controller')
     self.arm.set_pose_target(goal.back)
 
-    # join the open thread
-    open_thread.join()
-
     # stop controllers
+    rospy.sleep(self.sleep_dur)
     self.arm.pause_all_controllers()
     self.r2h_handv_as.set_succeeded(self.r2h_handv_result)
+
+  def compute_target_distance(self):
+    c_position = self.arm.get_current_frame().pose
+    self.distance = pow(pow(c_position.x - self.target.position.x,2)+pow(c_position.y - self.target.position.y,2),pow(c_position.y - self.target.position.y,2),.5)
+
+  def release(self):
+    rate = rospy.Rate(100)
+    self.wrist_dyn.detection.dynamic_contact = False
+    while not self.wrist_dyn.detection.dynamic_contact and not rospy.is_shutdown():
+      rate.sleep()
+    self.hand.open(self.open_vel)
 
 def main():
 
