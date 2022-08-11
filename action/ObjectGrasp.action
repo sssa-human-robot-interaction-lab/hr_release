@@ -1,9 +1,8 @@
 #goal   
-geometry_msgs/Pose home
-geometry_msgs/Pose target
-geometry_msgs/Pose back
-std_msgs/Float64MultiArray preshape
-std_msgs/Float64MultiArray shape
+geometry_msgs/Pose tool_to_obj
+geometry_msgs/Point delta
+std_msgs/Float64MultiArray hand_preshape
+std_msgs/Float64MultiArray hand_target
 float64 alpha
 float64 max_vel
 float64 max_angvel

@@ -1,4 +1,9 @@
-import rospy, actionlib
+from multiprocessing.connection import wait
+import numpy as np
+
+import rospy, actionlib, tf.transformations as ts
+
+from artificial_hands_py.artificial_hands_py_base import *
 
 from hr_release.msg import *
 from hr_release.robot_commander import RobotCommander
@@ -20,31 +25,44 @@ class ObjectGraspModule(RobotCommander):
     self.grasp_feedback.percentage = 100
 
     # get hand in open position
-    self.hand.set_joint_positions([0.4,0.0,0.0])
+    self.hand.set_joint_positions(goal.hand_preshape.data)
 
-    # go to home pose
+    # set arm control
     self.arm.set_max_accel(goal.max_accel)
     self.arm.set_max_angaccel(goal.max_angaccel)
     self.arm.set_harmonic_traj_generator()
-    self.arm.switch_to_cartesian_controller('cartesian_motion_position_controller')
-    self.arm.set_pose_target(goal.home)
+    self.arm.switch_to_cartesian_controller('cartesian_eik_position_controller')
 
-    # get hand in preshape
-    self.hand.set_joint_positions(goal.preshape.data)
+    # retrieve target in the reference frame and move arm
+    T_OT = pose_to_matrix(goal.tool_to_obj)
+    T_BO = pose_to_matrix(self.vision.obj_pnt.get_pose())
+    T = np.dot(T_BO,T_OT)
+
+    # return
+    h_pose = matrix_to_pose(T)
+    self.arm.set_pose_target(h_pose)
+
+    # fix target pose for grasp
+    t_pose = pose_copy(h_pose)
+    t_pose.position.x -= goal.delta.x
+    t_pose.position.y -= goal.delta.y
+    t_pose.position.z -= goal.delta.z
 
     # go to grasp pose with trapz
     self.arm.set_alpha(goal.alpha)
     self.arm.set_max_vel(goal.max_vel)
     self.arm.set_max_angvel(goal.max_angvel)
     self.arm.set_mod_trapz_traj_generator()
-    self.arm.set_pose_target(goal.target)
+    self.arm.set_pose_target(t_pose,wait = False)
+    self.arm.wait_for_trajectory_monitor()
 
-    # get hand in closed shape
-    self.hand.set_joint_positions(goal.shape.data)
-    rospy.sleep(3)
+    # get hand in closed shape and stop control
+    self.hand.set_joint_target_positions(target = goal.hand_target.data, goal_time = 1.0)
+    rospy.sleep(self.sleep_dur)
+    self.hand.stop()
 
     # go to back position
-    self.arm.set_pose_target(goal.back)
+    self.arm.set_pose_target(h_pose)
 
     # stop controllers
     rospy.sleep(self.sleep_dur)

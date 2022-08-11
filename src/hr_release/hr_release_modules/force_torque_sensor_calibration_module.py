@@ -42,6 +42,7 @@ class ForceTorqueSensorCalibrationModule(RobotCommander):
 
     # check current (if any) calibration
     self.wrist_dyn.apply_calibration()
+    rospy.sleep(self.sleep_dur) # wait for filters to adapt to new offset
     self.wrist_dyn.start_loop()
     if self.wrist_dyn.check_calibration():
       self.calib_feedback.calib_ok = True
@@ -59,7 +60,7 @@ class ForceTorqueSensorCalibrationModule(RobotCommander):
     
     # align sensor with base frame
     # c_pose.orientation = list_to_quat([0,0,0,1])
-    self.add_calibration_point(c_pose)
+    # self.add_calibration_point(c_pose)
 
     # get current sensor orientation and rotate on its own x-axis
     rot = ts.quaternion_matrix(quat_to_list(c_pose.orientation))
@@ -82,14 +83,14 @@ class ForceTorqueSensorCalibrationModule(RobotCommander):
     # return to home (z up, in two steps to be sure to move back)
     rot = ts.quaternion_matrix(quat_to_list(c_pose.orientation))
     c_pose.orientation = list_to_quat(ts.quaternion_multiply(ts.quaternion_about_axis(pi/2,rot[:,0]),quat_to_list(c_pose.orientation)))
-    self.arm.set_pose_target(c_pose)
+    self.add_calibration_point(c_pose)
     rot = ts.quaternion_matrix(quat_to_list(c_pose.orientation))
     c_pose.orientation = list_to_quat(ts.quaternion_multiply(ts.quaternion_about_axis(pi/2,rot[:,0]),quat_to_list(c_pose.orientation)))
-    self.arm.set_pose_target(c_pose)
+    self.add_calibration_point(c_pose)
     rot = ts.quaternion_matrix(quat_to_list(c_pose.orientation))
     for c in range(0,2):
       c_pose.orientation = list_to_quat(ts.quaternion_multiply(ts.quaternion_about_axis(-pi/2,rot[:,2]),quat_to_list(c_pose.orientation)))
-      self.arm.set_pose_target(c_pose)
+      self.add_calibration_point(c_pose)
 
     # estimate calibration and get wrist_dynamics_module to idle
     self.wrist_dyn.estimate_calibration()

@@ -1,10 +1,12 @@
 <?xml version="1.0"?>
 <launch>
 
-  <arg name="fake_ft" default="true" />
+  <arg name="fake_ft" default="false" />
 
   <!-- Launch the wrist dynamics node -->
-  <include file="$(find artificial_hands_dynamics)/launch/wrist_dynamics_node.launch"/>
+  <include file="$(find artificial_hands_dynamics)/launch/wrist_dynamics_node.launch">
+    <arg name="rate" value="50"/>
+  </include>
 
   <!-- Bringup the FT sensor (fake or real hw)-->
   <node if="$(arg fake_ft)" pkg="artificial_hands_nodes" type="fake_ft_sensor_node.py" name="fake_ft_sensor" output="screen"/>

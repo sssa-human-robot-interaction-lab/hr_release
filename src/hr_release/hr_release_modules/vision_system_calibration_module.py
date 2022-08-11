@@ -27,7 +27,7 @@ class VisionSystemCalibrationModule(RobotCommander):
     self.calib_feedback.percentage = 40
 
     # get hand in open position
-    self.hand.open()
+    self.hand.set_joint_positions([0.4,0.4,0.3])
 
     # go to home position
     self.arm.set_max_accel(goal.max_accel)
@@ -35,23 +35,28 @@ class VisionSystemCalibrationModule(RobotCommander):
     self.arm.set_harmonic_traj_generator()
     self.arm.switch_to_cartesian_controller('cartesian_eik_position_controller')
     self.arm.set_pose_target(goal.home)
+    rospy.sleep(self.sleep_dur)
+
+    # reset previous calibration
+    self.vision.reset_calibration_matrix()
+    rospy.sleep(self.sleep_dur)
 
     # get current pose and init list for four point calibration
     o_pose = self.arm.get_current_frame(frame = 'probe').pose
-    pnts = [self.vision.get_position(self.vision.giv_pnt)]
+    pnts = [self.vision.giv_pnt.get_position()]
     
     # move +x
     c_pose = self.arm.get_current_frame().pose
     c_pose.position.x += goal.delta
     self.arm.set_pose_target(c_pose)
     rospy.sleep(self.sleep_dur)
-    pnts.append(self.vision.get_position(self.vision.giv_pnt))
+    pnts.append(self.vision.giv_pnt.get_position())
 
     # move +y
     c_pose.position.y += goal.delta
     self.arm.set_pose_target(c_pose)
     rospy.sleep(self.sleep_dur)
-    pnts.append(self.vision.get_position(self.vision.giv_pnt))
+    pnts.append(self.vision.giv_pnt.get_position())
 
     # return to home position
     self.arm.set_pose_target(goal.home)

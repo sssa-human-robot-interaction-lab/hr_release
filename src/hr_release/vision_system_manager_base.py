@@ -4,10 +4,34 @@ from functools import partial
 
 import rospy, tf, tf.transformations as ts
 
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped, Pose
 
 from artificial_hands_msgs.msg import CartesianTrajectoryPointStamped
 from artificial_hands_py.artificial_hands_py_base import *
+\
+class VisionPoint:
+
+  def __init__(self, frame_id : str, subject : str, callback, broadcaster) -> None:
+    
+    self.pnt = CartesianTrajectoryPointStamped()
+    self.pnt.header.frame_id = frame_id
+    self.pnt.point.pose.orientation.w = 1
+   
+    sub = rospy.Subscriber('vicon/'+subject,TransformStamped,partial(callback,self.pnt))
+    self.pub = rospy.Publisher('vicon_state'+subject,CartesianTrajectoryPointStamped,queue_size=1000)
+   
+    self.br : tf. TransformBroadcaster = broadcaster
+
+  def update(self):
+    self.pub.publish(self.pnt)
+    self.br.sendTransform([self.pnt.point.pose.position.x,self.pnt.point.pose.position.y,self.pnt.point.pose.position.z],
+      quat_to_list(self.pnt.point.pose.orientation),rospy.Time.now(),self.pnt.header.frame_id,"base")
+
+  def get_position(self):
+      return [self.pnt.point.pose.position.x,self.pnt.point.pose.position.y,self.pnt.point.pose.position.z].copy()
+
+  def get_pose(self):
+      return self.pnt.point.pose
 
 @singleton
 class VisionSystem:
@@ -18,25 +42,36 @@ class VisionSystem:
 
   def __init__(self) -> None:
 
-    def init_pnt(frame_id : str):
-      pnt = CartesianTrajectoryPointStamped()
-      pnt.header.frame_id = frame_id
-      pnt.point.pose.orientation.w = 1
-      return pnt
+    # def init_pnt(frame_id : str):
+    #   pnt = CartesianTrajectoryPointStamped()
+    #   pnt.header.frame_id = frame_id
+    #   pnt.point.pose.orientation.w = 1
+    #   return pnt
 
-    self.rec_pnt = init_pnt('receiver')
-    self.giv_pnt = init_pnt('giver')
-    self.obj_pnt = init_pnt('object')   
+    # self.rec_pnt = init_pnt('receiver')
+    # self.giv_pnt = init_pnt('giver')
+    # self.obj_pnt = init_pnt('object')   
     
-    rec_sub = rospy.Subscriber('vicon/MagicBall/ball',TransformStamped,partial(self.vicon_cb,self.rec_pnt))
-    giv_sub = rospy.Subscriber('vicon/Mia/hand',TransformStamped,partial(self.vicon_cb,self.giv_pnt))
-    obj_sub = rospy.Subscriber('vicon/TestObjext/object',TransformStamped,partial(self.vicon_cb,self.obj_pnt))
+    # rec_sub = rospy.Subscriber('vicon/MagicBall/ball',TransformStamped,partial(self.vision_cb,self.rec_pnt))
+    # giv_sub = rospy.Subscriber('vicon/Mia/hand',TransformStamped,partial(self.vision_cb,self.giv_pnt))
+    # obj_sub = rospy.Subscriber('vicon/TestObject/object',TransformStamped,partial(self.vision_cb,self.obj_pnt))
+
+    # self.rec_pub = rospy.Publisher('vicon_state/MagicBall/ball',CartesianTrajectoryPointStamped,queue_size=1000)
+    # self.giv_pub = rospy.Publisher('vicon_State/Mia/hand',CartesianTrajectoryPointStamped,queue_size=1000)
+    # self.obj_pub = rospy.Publisher('vicon_state/TestObject/object',CartesianTrajectoryPointStamped,queue_size=1000)
+
+    self.rec_pnt = VisionPoint('receiver','MagicBall/ball',self.vision_cb, self.br)
+    self.giv_pnt = VisionPoint('giver','Mia/hand',self.vision_cb, self.br)
+    self.obj_pnt = VisionPoint('object','TestObject/object',self.vision_cb, self.br)
 
     self.pnts = [self.rec_pnt,self.giv_pnt,self.obj_pnt]
 
     self.R = ts.rotation_matrix(0,[0,0,1])
   
     tf_tim = rospy.Timer(rospy.Duration(0.01), self.update_tf)
+
+  def reset_calibration_matrix(self):
+    self.R = ts.rotation_matrix(0,[0,0,1])
 
   def four_point_calibration(self, pnts : list, arm_pnt : list):
 
@@ -64,21 +99,22 @@ class VisionSystem:
 
     self.lock.release()
 
-  def get_position(self, pnt : CartesianTrajectoryPointStamped) -> list:
-    return [pnt.point.pose.position.x,pnt.point.pose.position.y,pnt.point.pose.position.z].copy()
-
   def update_tf(self, event):
     self.lock.acquire()
     for pnt in self.pnts:
-      self.br.sendTransform([pnt.point.pose.position.x,pnt.point.pose.position.y,pnt.point.pose.position.z],
-      quat_to_list(pnt.point.pose.orientation),rospy.Time.now(),pnt.header.frame_id,"base")
+      pnt.update()
     self.lock.release()
    
-  def vicon_cb(self, pnt : CartesianTrajectoryPointStamped, msg : TransformStamped):
+  def vision_cb(self, pnt : CartesianTrajectoryPointStamped, msg : TransformStamped):
     self.lock.acquire()
-    # pnt_new = np.reshape(np.dot(self.R,np.transpose([msg.transform.translation.x,msg.transform.translation.y,msg.transform.translation.z,1.0])),(4,1))
-    # pnt.point.pose.position.x = pnt_new[0,0]
-    # pnt.point.pose.position.y = pnt_new[1,0]
-    # pnt.point.pose.position.z = pnt_new[2,0]
-    pnt.point.pose = matrix_to_pose(np.dot(self.R,transform_to_matrix(msg.transform)))
+    dt = msg.header.stamp.to_sec() - pnt.header.stamp.to_sec()
+    c_point = pnt.point
+    pnt.header.stamp = msg.header.stamp
+    pnt.point.pose : Pose = matrix_to_pose(np.dot(self.R,transform_to_matrix(msg.transform)))
+    pnt.point.twist.linear.x = (pnt.point.pose.position.x - c_point.pose.position.x)/dt
+    pnt.point.twist.linear.y = (pnt.point.pose.position.y - c_point.pose.position.y)/dt
+    pnt.point.twist.linear.z = (pnt.point.pose.position.z - c_point.pose.position.z)/dt
+    pnt.point.acceleration.linear.x = (pnt.point.twist.linear.x - c_point.twist.linear.x)/dt
+    pnt.point.acceleration.linear.y = (pnt.point.twist.linear.y - c_point.twist.linear.y)/dt
+    pnt.point.acceleration.linear.z = (pnt.point.twist.linear.z - c_point.twist.linear.z)/dt
     self.lock.release()

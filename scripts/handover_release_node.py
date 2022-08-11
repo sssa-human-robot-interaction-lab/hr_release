@@ -27,8 +27,8 @@ def main():
   vis_cal_goal.home.position.y = -0.109
   vis_cal_goal.home.position.z = 0.223
   vis_cal_goal.home.orientation = list_to_quat([0,0,-0.7,0.7])
-  vis_cal_goal.max_accel = 0.4
-  vis_cal_goal.max_angaccel = 0.4
+  vis_cal_goal.max_accel = 0.8
+  vis_cal_goal.max_angaccel = 0.8
   vis_cal_goal.delta = 0.2
 
   # set position for sensor_calibration
@@ -37,24 +37,23 @@ def main():
   ft_cal_goal.home.position.y = -0.109
   ft_cal_goal.home.position.z = 0.223
   ft_cal_goal.home.orientation = list_to_quat([0,0,-0.7,0.7])
-  ft_cal_goal.max_accel = 0.4
-  ft_cal_goal.max_angaccel = 0.4
+  ft_cal_goal.max_accel = 0.8
+  ft_cal_goal.max_angaccel = 1.0
 
   # grasp the object
   obj_grasp_goal = ObjectGraspGoal()
-  obj_grasp_goal.home.position.x = 0.593
-  obj_grasp_goal.home.position.y = -0.131
-  obj_grasp_goal.home.position.z = -0.066
-  obj_grasp_goal.home.orientation.x = -0.255
-  obj_grasp_goal.home.orientation.y = 0.674
-  obj_grasp_goal.home.orientation.z = -0.695
-  obj_grasp_goal.home.orientation.w = 0.253
-  obj_grasp_goal.preshape.data = [0.3,0.3,0.0]
-  obj_grasp_goal.target = pose_copy(obj_grasp_goal.home)
-  obj_grasp_goal.target.position.y = -0.342
-  obj_grasp_goal.shape.data = [1.2,1.2,0.6]
-  obj_grasp_goal.back = pose_copy(obj_grasp_goal.target)
-  obj_grasp_goal.back.position.z = 0.010
+  obj_grasp_goal.tool_to_obj.position.x = -0.254
+  obj_grasp_goal.tool_to_obj.position.y = -0.137
+  obj_grasp_goal.tool_to_obj.position.z = -0.020
+  obj_grasp_goal.tool_to_obj.orientation.x = -0.690
+  obj_grasp_goal.tool_to_obj.orientation.y = 0.163
+  obj_grasp_goal.tool_to_obj.orientation.z = -0.144
+  obj_grasp_goal.tool_to_obj.orientation.w = 0.690
+  obj_grasp_goal.hand_preshape.data = [0.1,0.4,0.0]
+  obj_grasp_goal.hand_target.data = [0.5,1.0,1.1]
+  obj_grasp_goal.delta.z = 0.15
+  obj_grasp_goal.max_accel = 0.4
+  obj_grasp_goal.max_angaccel = 0.4
   obj_grasp_goal.max_vel = 0.4
   obj_grasp_goal.max_angvel = 0.4
   obj_grasp_goal.alpha = 0.2
@@ -62,21 +61,23 @@ def main():
   # start object_recognition while positioning for reaching
   obj_rec_goal = ObjectRecognitionGoal()
   obj_rec_goal.home = pose_copy(ft_cal_goal.home)
-  obj_rec_goal.max_accel = 0.4
-  obj_rec_goal.max_angaccel = 0.2
+  obj_rec_goal.max_accel = 0.6
+  obj_rec_goal.max_angaccel = 0.6
 
   # continue with reaching
-  # r2h_handv_goal = RobotHumanHandoverReachingGoal()
-  # r2h_handv_goal.home = pose_copy(obj_rec_goal.target)
-  # r2h_handv_goal.target = pose_copy(r2h_handv_goal.home)
-  # r2h_handv_goal.target.position.x = 0.66
-  # r2h_handv_goal.target.position.y = 0.58
-  # r2h_handv_goal.target.position.z = 0.21
-  # r2h_handv_goal.back = pose_copy(ft_cal_goal.home)
-  # r2h_handv_goal.max_accel = 0.4
-  # r2h_handv_goal.max_angaccel = 0.4
-  # r2h_handv_goal.stop_time = 0.2
-  # r2h_handv_goal.sleep = 1
+  r2h_handv_goal = RobotHumanHandoverReachingGoal()
+  r2h_handv_goal.target.position.x = -0.577
+  r2h_handv_goal.target.position.y = -0.267
+  r2h_handv_goal.target.position.z = 0.328
+  r2h_handv_goal.target.orientation.x = 0.850
+  r2h_handv_goal.target.orientation.y = -0.281
+  r2h_handv_goal.target.orientation.z = -0.335
+  r2h_handv_goal.target.orientation.w = 0.290
+  r2h_handv_goal.back = pose_copy(ft_cal_goal.home)
+  r2h_handv_goal.max_accel = 0.4
+  r2h_handv_goal.max_angaccel = 0.4
+  r2h_handv_goal.stop_time = 0.2
+  r2h_handv_goal.sleep = 1
 
   # high level control loop
   while True:
@@ -85,16 +86,16 @@ def main():
     vis_cal_cl.send_goal_and_wait(vis_cal_goal)
 
     # start or check ft sensor calibration
-    #ft_cal_cl.send_goal_and_wait(ft_cal_goal)
+    # ft_cal_cl.send_goal_and_wait(ft_cal_goal)
     
     # grasp
-    # obj_grasp_cl.send_goal_and_wait(obj_grasp_goal)
+    obj_grasp_cl.send_goal_and_wait(obj_grasp_goal)
     
     # do object recognition
-    #obj_rec_cl.send_goal_and_wait(obj_rec_goal)
+    # obj_rec_cl.send_goal_and_wait(obj_rec_goal)
 
     # continue with the handover
-    # r2h_handv_cl.send_goal_and_wait(r2h_handv_goal)
+    r2h_handv_cl.send_goal_and_wait(r2h_handv_goal)
 
     break
 
