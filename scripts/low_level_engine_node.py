@@ -17,7 +17,7 @@ def main():
   vis_cal_mod = VisionSystemCalibrationModule(cart_controller)
   ft_cal_mod = ForceTorqueSensorCalibrationModule(cart_controller)
   obj_grasp_mod = ObjectGraspModule(cart_controller)
-  obj_rev_mod = ObjectRecognitionModule(cart_controller)
+  obj_rec_mod = ObjectRecognitionModule(cart_controller)
   r2h_handv_mod = RobotHumanHandoverReachingModule(cart_controller)
 
   rospy.loginfo("Low-level control engine ready!")

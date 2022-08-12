@@ -38,7 +38,7 @@ class ObjectRecognitionModule(RobotCommander):
     # go to home position
     self.arm.set_max_accel(goal.max_accel)
     self.arm.set_max_angaccel(goal.max_angaccel)
-    self.arm.set_harmonic_traj_generator()
+    self.arm.set_poly_567_traj_generator()
     self.arm.switch_to_cartesian_controller(self.controller)
     self.arm.set_pose_target(goal.home)
 
@@ -152,7 +152,7 @@ class ObjectRecognitionModule(RobotCommander):
       target.acceleration.angular.y = ydd[4]
       target.acceleration.angular.z = ydd[5]
 
-      self.arm.forward_target(target)
+      self.arm.forward_target(target,wait = False)
 
       if not stop and t > Ts:
         self.wrist_dyn.stop_loop() # only half of the trajectory is required for object recognition

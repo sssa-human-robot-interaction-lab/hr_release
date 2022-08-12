@@ -67,27 +67,26 @@ def main():
   # continue with reaching
   r2h_handv_goal = RobotHumanHandoverReachingGoal()
   r2h_handv_goal.back = pose_copy(ft_cal_goal.home)
-  r2h_handv_goal.target_off.position.x = -0.227
-  r2h_handv_goal.target_off.position.y = -0.331
-  r2h_handv_goal.target_off.position.z = 0.328
-  r2h_handv_goal.target_off.orientation.x = 0.902
-  r2h_handv_goal.target_off.orientation.y = -0.203
-  r2h_handv_goal.target_off.orientation.z = -0.202
-  r2h_handv_goal.target_off.orientation.w = 0.320
-  r2h_handv_goal.max_accel = 1.6
-  r2h_handv_goal.max_angaccel = 1.6
+  r2h_handv_goal.target_off.position.x = -0.251
+  r2h_handv_goal.target_off.position.y = -0.591
+  r2h_handv_goal.target_off.position.z = 0.359
+  r2h_handv_goal.target_off.orientation.x = 0.755
+  r2h_handv_goal.target_off.orientation.y = -0.224
+  r2h_handv_goal.target_off.orientation.z = -0.170
+  r2h_handv_goal.target_off.orientation.w = 0.591
+  r2h_handv_goal.max_accel = 0.2
+  r2h_handv_goal.max_angaccel = 0.2
   r2h_handv_goal.stop_time = 0.5
   r2h_handv_goal.sleep = 1
-  r2h_handv_goal.goal_time = 4
   r2h_handv_goal.hand_open_pos.data = [0.1,0.4,0.0]
-  r2h_handv_goal.release_duration = 0.2
   r2h_handv_goal.release_type = r2h_handv_goal.FIXED
+  r2h_handv_goal.release_duration = 1.0 # used only if release type is FIXED
 
   # high level control loop
   while True:
 
     # start or check vision_calibration
-    vis_cal_cl.send_goal_and_wait(vis_cal_goal)
+    #vis_cal_cl.send_goal_and_wait(vis_cal_goal)
 
     # start or check ft sensor calibration
     ft_cal_cl.send_goal_and_wait(ft_cal_goal)
@@ -99,7 +98,7 @@ def main():
     #obj_rec_cl.send_goal_and_wait(obj_rec_goal)
 
     # continue with the handover
-    #r2h_handv_cl.send_goal_and_wait(r2h_handv_goal)
+    r2h_handv_cl.send_goal_and_wait(r2h_handv_goal)
 
     break
 

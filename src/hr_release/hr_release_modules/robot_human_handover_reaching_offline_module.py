@@ -47,11 +47,6 @@ class RobotHumanHandoverReachingModule(RobotCommander):
     self.arm.set_poly_567_traj_generator()
     self.arm.switch_to_cartesian_controller(self.controller)
     
-    # start from target orientation, 
-    # home = self.arm.get_current_frame().pose
-    # home.orientation = goal.target_off.orientation
-    # self.arm.set_pose_target(home)
-    
     # go to the target position
     self.target = goal.target_off
     self.arm.set_pose_target(self.target,False)
@@ -89,6 +84,8 @@ class RobotHumanHandoverReachingModule(RobotCommander):
 
     # wait a bit and retire to back position
     rospy.sleep(rospy.Duration(goal.sleep))
+    self.arm.set_poly_567_traj_generator()
+    self.arm.switch_to_cartesian_controller(self.controller)
     self.arm.set_pose_target(goal.back)
 
     # stop controllers

@@ -44,12 +44,6 @@ class ObjectGraspModule(RobotCommander):
     h_pose = matrix_to_pose(T)
     self.arm.set_pose_target(h_pose)
 
-    # stop controllers
-    rospy.sleep(self.sleep_dur)
-    self.arm.pause_all_controllers()
-    self.grasp_as.set_succeeded(self.grasp_result)
-    return
-
     # fix target pose for grasp
     t_pose = pose_copy(h_pose)
     t_pose.position.x -= goal.delta.x
