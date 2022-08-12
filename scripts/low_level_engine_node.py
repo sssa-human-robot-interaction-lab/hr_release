@@ -6,17 +6,19 @@ from hr_release.hr_release_modules.vision_system_calibration_module import Visio
 from hr_release.hr_release_modules.force_torque_sensor_calibration_module import ForceTorqueSensorCalibrationModule
 from hr_release.hr_release_modules.object_grasp_module import ObjectGraspModule
 from hr_release.hr_release_modules.object_recognition_module import ObjectRecognitionModule
-from hr_release.hr_release_modules.robot_human_handover_reaching_module import RobotHumanHandoverReachingModule
+from hr_release.hr_release_modules.robot_human_handover_reaching_offline_module import RobotHumanHandoverReachingModule
 
 def main():
 
   rospy.init_node('fake_low_level_engine_node')
 
-  vis_cal_mod = VisionSystemCalibrationModule()
-  ft_cal_mod = ForceTorqueSensorCalibrationModule()
-  obj_grasp_mod = ObjectGraspModule()
-  obj_rev_mod = ObjectRecognitionModule()
-  r2h_handv_mod = RobotHumanHandoverReachingModule()
+  cart_controller = 'cartesian_eik_velocity_controller'
+
+  vis_cal_mod = VisionSystemCalibrationModule(cart_controller)
+  ft_cal_mod = ForceTorqueSensorCalibrationModule(cart_controller)
+  obj_grasp_mod = ObjectGraspModule(cart_controller)
+  obj_rev_mod = ObjectRecognitionModule(cart_controller)
+  r2h_handv_mod = RobotHumanHandoverReachingModule(cart_controller)
 
   rospy.loginfo("Low-level control engine ready!")
 

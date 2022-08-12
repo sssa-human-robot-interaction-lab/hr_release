@@ -42,18 +42,18 @@ def main():
 
   # grasp the object
   obj_grasp_goal = ObjectGraspGoal()
-  obj_grasp_goal.tool_to_obj.position.x = -0.254
-  obj_grasp_goal.tool_to_obj.position.y = -0.137
-  obj_grasp_goal.tool_to_obj.position.z = -0.020
-  obj_grasp_goal.tool_to_obj.orientation.x = -0.690
-  obj_grasp_goal.tool_to_obj.orientation.y = 0.163
-  obj_grasp_goal.tool_to_obj.orientation.z = -0.144
-  obj_grasp_goal.tool_to_obj.orientation.w = 0.690
+  obj_grasp_goal.tool_to_obj.position.x = -0.044
+  obj_grasp_goal.tool_to_obj.position.y = 0.137
+  obj_grasp_goal.tool_to_obj.position.z = -0.310
+  obj_grasp_goal.tool_to_obj.orientation.x = 0.325
+  obj_grasp_goal.tool_to_obj.orientation.y = -0.246
+  obj_grasp_goal.tool_to_obj.orientation.z = 0.633
+  obj_grasp_goal.tool_to_obj.orientation.w = 0.658
   obj_grasp_goal.hand_preshape.data = [0.1,0.4,0.0]
-  obj_grasp_goal.hand_target.data = [0.5,1.0,1.1]
-  obj_grasp_goal.delta.z = 0.15
-  obj_grasp_goal.max_accel = 0.4
-  obj_grasp_goal.max_angaccel = 0.4
+  obj_grasp_goal.hand_target.data = [0.4,0.75,0.5]
+  obj_grasp_goal.delta.z = 0.1
+  obj_grasp_goal.max_accel = 0.8
+  obj_grasp_goal.max_angaccel = 0.8
   obj_grasp_goal.max_vel = 0.4
   obj_grasp_goal.max_angvel = 0.4
   obj_grasp_goal.alpha = 0.2
@@ -66,18 +66,22 @@ def main():
 
   # continue with reaching
   r2h_handv_goal = RobotHumanHandoverReachingGoal()
-  r2h_handv_goal.target.position.x = -0.577
-  r2h_handv_goal.target.position.y = -0.267
-  r2h_handv_goal.target.position.z = 0.328
-  r2h_handv_goal.target.orientation.x = 0.850
-  r2h_handv_goal.target.orientation.y = -0.281
-  r2h_handv_goal.target.orientation.z = -0.335
-  r2h_handv_goal.target.orientation.w = 0.290
   r2h_handv_goal.back = pose_copy(ft_cal_goal.home)
-  r2h_handv_goal.max_accel = 0.4
-  r2h_handv_goal.max_angaccel = 0.4
-  r2h_handv_goal.stop_time = 0.2
+  r2h_handv_goal.target_off.position.x = -0.227
+  r2h_handv_goal.target_off.position.y = -0.331
+  r2h_handv_goal.target_off.position.z = 0.328
+  r2h_handv_goal.target_off.orientation.x = 0.902
+  r2h_handv_goal.target_off.orientation.y = -0.203
+  r2h_handv_goal.target_off.orientation.z = -0.202
+  r2h_handv_goal.target_off.orientation.w = 0.320
+  r2h_handv_goal.max_accel = 1.6
+  r2h_handv_goal.max_angaccel = 1.6
+  r2h_handv_goal.stop_time = 0.5
   r2h_handv_goal.sleep = 1
+  r2h_handv_goal.goal_time = 4
+  r2h_handv_goal.hand_open_pos.data = [0.1,0.4,0.0]
+  r2h_handv_goal.release_duration = 0.2
+  r2h_handv_goal.release_type = r2h_handv_goal.FIXED
 
   # high level control loop
   while True:
@@ -86,16 +90,16 @@ def main():
     vis_cal_cl.send_goal_and_wait(vis_cal_goal)
 
     # start or check ft sensor calibration
-    # ft_cal_cl.send_goal_and_wait(ft_cal_goal)
+    ft_cal_cl.send_goal_and_wait(ft_cal_goal)
     
     # grasp
     obj_grasp_cl.send_goal_and_wait(obj_grasp_goal)
     
     # do object recognition
-    # obj_rec_cl.send_goal_and_wait(obj_rec_goal)
+    #obj_rec_cl.send_goal_and_wait(obj_rec_goal)
 
     # continue with the handover
-    r2h_handv_cl.send_goal_and_wait(r2h_handv_goal)
+    #r2h_handv_cl.send_goal_and_wait(r2h_handv_goal)
 
     break
 

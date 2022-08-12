@@ -14,8 +14,10 @@ class ForceTorqueSensorCalibrationModule(RobotCommander):
   calib_feedback = ForceTorqueSensorCalibrationFeedback()
   calib_result = ForceTorqueSensorCalibrationResult()
 
-  def __init__(self) -> None: 
+  def __init__(self, cartesian_controller : str = 'cartesian_eik_position_controller') -> None: 
     super().__init__()
+    
+    self.controller = cartesian_controller
   
     self.calib_as = actionlib.SimpleActionServer('/force_torque_sensor_calibration',ForceTorqueSensorCalibrationAction,execute_cb=self.calibration_cb,auto_start=False)
 
@@ -31,23 +33,24 @@ class ForceTorqueSensorCalibrationModule(RobotCommander):
     self.wrist_dyn.set_publish()
 
     # get hand in open position
-    self.hand.open()
+    self.hand.set_joint_positions([0.1,0.4,0.2])
 
     # go to home position
     self.arm.set_max_accel(goal.max_accel)
     self.arm.set_max_angaccel(goal.max_angaccel)
-    self.arm.set_harmonic_traj_generator()
-    self.arm.switch_to_cartesian_controller('cartesian_eik_position_controller')
+    self.arm.set_poly_567_traj_generator()
+    self.arm.switch_to_cartesian_controller(self.controller)
     self.arm.set_pose_target(goal.home)
 
     # check current (if any) calibration
     self.wrist_dyn.apply_calibration()
-    rospy.sleep(self.sleep_dur) # wait for filters to adapt to new offset
     self.wrist_dyn.start_loop()
+    rospy.sleep(1) # wait for filters to adapt to new offset
     if self.wrist_dyn.check_calibration():
+      self.wrist_dyn.stop_loop()
+      self.arm.pause_all_controllers()
       self.calib_feedback.calib_ok = True
       self.calib_as.set_succeeded(self.calib_result)
-      self.wrist_dyn.stop_loop()
       return
 
     # unload current calibration and start node again

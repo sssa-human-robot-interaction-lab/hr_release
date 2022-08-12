@@ -14,8 +14,10 @@ class VisionSystemCalibrationModule(RobotCommander):
   calib_feedback = VisionSystemCalibrationFeedback()
   calib_result = VisionSystemCalibrationResult()
 
-  def __init__(self) -> None: 
+  def __init__(self, cartesian_controller : str = 'cartesian_eik_position_controller') -> None: 
     super().__init__()
+    
+    self.controller = cartesian_controller
   
     self.calib_as = actionlib.SimpleActionServer('/vision_system_calibration',VisionSystemCalibrationAction,execute_cb=self.calibration_cb,auto_start=False)
 
@@ -27,13 +29,13 @@ class VisionSystemCalibrationModule(RobotCommander):
     self.calib_feedback.percentage = 40
 
     # get hand in open position
-    self.hand.set_joint_positions([0.4,0.4,0.3])
+    self.hand.set_joint_positions([0.1,0.4,0.2])
 
     # go to home position
     self.arm.set_max_accel(goal.max_accel)
     self.arm.set_max_angaccel(goal.max_angaccel)
-    self.arm.set_harmonic_traj_generator()
-    self.arm.switch_to_cartesian_controller('cartesian_eik_position_controller')
+    self.arm.set_poly_567_traj_generator()
+    self.arm.switch_to_cartesian_controller(self.controller)
     self.arm.set_pose_target(goal.home)
     rospy.sleep(self.sleep_dur)
 

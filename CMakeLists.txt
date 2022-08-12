@@ -19,7 +19,6 @@ add_action_files(
   ObjectGrasp.action
   ObjectRecognition.action
   RobotHumanHandoverReaching.action
-  RobotMoveWaypoints.action
   VisionSystemCalibration.action
 )
 

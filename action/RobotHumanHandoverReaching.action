@@ -1,15 +1,21 @@
-#goal   
-geometry_msgs/Pose home
-geometry_msgs/Pose target
+#goal
+geometry_msgs/Pose target_off
 geometry_msgs/Pose back
 float64 sleep
 float64 max_accel
 float64 max_angaccel
 float64 stop_time
-float64 stop_factor
+float64 goal_time
+std_msgs/Float64MultiArray hand_open_pos
+float64 release_duration
+int64 release_type
+int64 ADAPTIVE = 1
+int64 FIXED = 2
 ---
 #result
 int64 success
 ---
 #feedback
 int64 percentage
+float64 receiver_peak_accel
+float64 distance_to_target

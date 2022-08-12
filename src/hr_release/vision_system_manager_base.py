@@ -1,14 +1,23 @@
 import numpy as np
-from threading import Lock
+from threading import Lock, Thread
 from functools import partial
+from queue import Queue
 
 import rospy, tf, tf.transformations as ts
 
-from geometry_msgs.msg import TransformStamped, Pose
+from geometry_msgs.msg import TransformStamped, Pose, Twist
+from cartesian_control_msgs.msg import CartesianTrajectoryPoint
 
 from artificial_hands_msgs.msg import CartesianTrajectoryPointStamped
 from artificial_hands_py.artificial_hands_py_base import *
-\
+
+def sav_gol(q : Queue):
+  s = 0
+  g = [0.08333,0.05952,0.03571,0.0119,-0.0019,-0.03571,-0.05952,-0.08333]
+  for c in g:
+    s += c*q.get()
+  return s
+
 class VisionPoint:
 
   def __init__(self, frame_id : str, subject : str, callback, broadcaster) -> None:
@@ -16,11 +25,51 @@ class VisionPoint:
     self.pnt = CartesianTrajectoryPointStamped()
     self.pnt.header.frame_id = frame_id
     self.pnt.point.pose.orientation.w = 1
-   
+
+    self.x = []
+    self.xd = []
+    self.xdd = []
+    
+    self.n_sav_gol = 8
+    for n in range(self.n_sav_gol):
+      self.x.append(Queue(maxsize = self.n_sav_gol))
+      self.xd.append(Queue(maxsize = self.n_sav_gol))
+      self.xdd.append(Queue(maxsize = self.n_sav_gol))
+
     sub = rospy.Subscriber('vicon/'+subject,TransformStamped,partial(callback,self.pnt))
-    self.pub = rospy.Publisher('vicon_state'+subject,CartesianTrajectoryPointStamped,queue_size=1000)
+    self.pub = rospy.Publisher('vicon_state/'+subject,CartesianTrajectoryPointStamped,queue_size=1000)
    
     self.br : tf. TransformBroadcaster = broadcaster
+
+    d_thread = Thread(target=self.update_d)
+    #d_thread.start
+  
+  def update_d(self):
+
+    rate = rospy.Rate(30)
+
+    while not rospy.is_shutdown():
+
+      for (q, p) in (zip(self.x,pose_to_list(self.pnt.point.pose))):
+        q.put(p)
+
+      if self.x[0].full():
+        td = []
+        for (qd, q) in (zip(self.xd,self.x)):
+          sd = sav_gol(q)
+          qd.put(sd)
+          td.append(sd)
+
+      if self.xd[0].full():
+        tdd = []
+        for (qdd, qd) in (zip(self.xdd,self.xd)):
+          sdd = sav_gol(qd)
+          qdd.put(sdd)
+          tdd.append(sdd)
+
+      self.pnt.point.twist = list_to_twist(td)
+      self.pnt.point.acceleration = list_to_twist(tdd)
+      rate.sleep() 
 
   def update(self):
     self.pub.publish(self.pnt)
@@ -28,10 +77,14 @@ class VisionPoint:
       quat_to_list(self.pnt.point.pose.orientation),rospy.Time.now(),self.pnt.header.frame_id,"base")
 
   def get_position(self):
-      return [self.pnt.point.pose.position.x,self.pnt.point.pose.position.y,self.pnt.point.pose.position.z].copy()
+    return [self.pnt.point.pose.position.x,self.pnt.point.pose.position.y,self.pnt.point.pose.position.z].copy()
+  
+  def get_acceleration_norm(self):
+    return pow(pow(self.pnt.point.acceleration.linear.x,2)+pow(self.pnt.point.acceleration.linear.y,2)+pow(self.pnt.point.acceleration.linear.z,2),.5)
 
   def get_pose(self):
-      return self.pnt.point.pose
+    p = self.pnt.point.pose
+    return p
 
 @singleton
 class VisionSystem:
@@ -42,23 +95,7 @@ class VisionSystem:
 
   def __init__(self) -> None:
 
-    # def init_pnt(frame_id : str):
-    #   pnt = CartesianTrajectoryPointStamped()
-    #   pnt.header.frame_id = frame_id
-    #   pnt.point.pose.orientation.w = 1
-    #   return pnt
-
-    # self.rec_pnt = init_pnt('receiver')
-    # self.giv_pnt = init_pnt('giver')
-    # self.obj_pnt = init_pnt('object')   
-    
-    # rec_sub = rospy.Subscriber('vicon/MagicBall/ball',TransformStamped,partial(self.vision_cb,self.rec_pnt))
-    # giv_sub = rospy.Subscriber('vicon/Mia/hand',TransformStamped,partial(self.vision_cb,self.giv_pnt))
-    # obj_sub = rospy.Subscriber('vicon/TestObject/object',TransformStamped,partial(self.vision_cb,self.obj_pnt))
-
-    # self.rec_pub = rospy.Publisher('vicon_state/MagicBall/ball',CartesianTrajectoryPointStamped,queue_size=1000)
-    # self.giv_pub = rospy.Publisher('vicon_State/Mia/hand',CartesianTrajectoryPointStamped,queue_size=1000)
-    # self.obj_pub = rospy.Publisher('vicon_state/TestObject/object',CartesianTrajectoryPointStamped,queue_size=1000)
+    self.R = ts.rotation_matrix(0,[0,0,1])
 
     self.rec_pnt = VisionPoint('receiver','MagicBall/ball',self.vision_cb, self.br)
     self.giv_pnt = VisionPoint('giver','Mia/hand',self.vision_cb, self.br)
@@ -66,8 +103,6 @@ class VisionSystem:
 
     self.pnts = [self.rec_pnt,self.giv_pnt,self.obj_pnt]
 
-    self.R = ts.rotation_matrix(0,[0,0,1])
-  
     tf_tim = rospy.Timer(rospy.Duration(0.01), self.update_tf)
 
   def reset_calibration_matrix(self):
@@ -105,16 +140,8 @@ class VisionSystem:
       pnt.update()
     self.lock.release()
    
-  def vision_cb(self, pnt : CartesianTrajectoryPointStamped, msg : TransformStamped):
+  def vision_cb(self, pnt : CartesianTrajectoryPointStamped, msg : TransformStamped): 
     self.lock.acquire()
-    dt = msg.header.stamp.to_sec() - pnt.header.stamp.to_sec()
-    c_point = pnt.point
     pnt.header.stamp = msg.header.stamp
     pnt.point.pose : Pose = matrix_to_pose(np.dot(self.R,transform_to_matrix(msg.transform)))
-    pnt.point.twist.linear.x = (pnt.point.pose.position.x - c_point.pose.position.x)/dt
-    pnt.point.twist.linear.y = (pnt.point.pose.position.y - c_point.pose.position.y)/dt
-    pnt.point.twist.linear.z = (pnt.point.pose.position.z - c_point.pose.position.z)/dt
-    pnt.point.acceleration.linear.x = (pnt.point.twist.linear.x - c_point.twist.linear.x)/dt
-    pnt.point.acceleration.linear.y = (pnt.point.twist.linear.y - c_point.twist.linear.y)/dt
-    pnt.point.acceleration.linear.z = (pnt.point.twist.linear.z - c_point.twist.linear.z)/dt
     self.lock.release()

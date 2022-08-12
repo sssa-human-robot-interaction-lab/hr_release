@@ -13,8 +13,10 @@ class ObjectGraspModule(RobotCommander):
   grasp_feedback = ObjectGraspFeedback()
   grasp_result = ObjectGraspResult()
 
-  def __init__(self) -> None:
+  def __init__(self, cartesian_controller : str = 'cartesian_eik_position_controller') -> None: 
     super().__init__()
+    
+    self.controller = cartesian_controller
     
     self.grasp_as = actionlib.SimpleActionServer('/object_grasp',ObjectGraspAction,execute_cb=self.grasp_cb,auto_start=False)
 
@@ -30,8 +32,8 @@ class ObjectGraspModule(RobotCommander):
     # set arm control
     self.arm.set_max_accel(goal.max_accel)
     self.arm.set_max_angaccel(goal.max_angaccel)
-    self.arm.set_harmonic_traj_generator()
-    self.arm.switch_to_cartesian_controller('cartesian_eik_position_controller')
+    self.arm.set_poly_567_traj_generator()
+    self.arm.switch_to_cartesian_controller(self.controller)
 
     # retrieve target in the reference frame and move arm
     T_OT = pose_to_matrix(goal.tool_to_obj)
@@ -41,6 +43,12 @@ class ObjectGraspModule(RobotCommander):
     # return
     h_pose = matrix_to_pose(T)
     self.arm.set_pose_target(h_pose)
+
+    # stop controllers
+    rospy.sleep(self.sleep_dur)
+    self.arm.pause_all_controllers()
+    self.grasp_as.set_succeeded(self.grasp_result)
+    return
 
     # fix target pose for grasp
     t_pose = pose_copy(h_pose)
