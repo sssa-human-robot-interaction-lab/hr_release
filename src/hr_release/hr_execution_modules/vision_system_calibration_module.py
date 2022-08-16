@@ -26,7 +26,7 @@ class VisionSystemCalibrationModule(RobotCommander):
   def calibration_cb(self, goal : VisionSystemCalibrationGoal):
     self.calib_result.success = True
     self.calib_feedback.calib_ok = False
-    self.calib_feedback.percentage = 40
+    self.calib_feedback.percentage = 0
 
     # get hand in open position
     self.hand.set_joint_positions([0.1,0.4,0.2])
@@ -38,6 +38,8 @@ class VisionSystemCalibrationModule(RobotCommander):
     self.arm.switch_to_cartesian_controller(self.controller)
     self.arm.set_pose_target(goal.home)
     rospy.sleep(self.sleep_dur)
+    self.calib_feedback.percentage = 30
+    self.calib_as.publish_feedback(self.calib_feedback)
 
     # reset previous calibration
     self.vision.reset_calibration_matrix()
@@ -53,18 +55,24 @@ class VisionSystemCalibrationModule(RobotCommander):
     self.arm.set_pose_target(c_pose)
     rospy.sleep(self.sleep_dur)
     pnts.append(self.vision.giv_pnt.get_position())
+    self.calib_feedback.percentage = 60
+    self.calib_as.publish_feedback(self.calib_feedback)
 
     # move +y
     c_pose.position.y += goal.delta
     self.arm.set_pose_target(c_pose)
     rospy.sleep(self.sleep_dur)
     pnts.append(self.vision.giv_pnt.get_position())
+    self.calib_feedback.percentage = 90
+    self.calib_as.publish_feedback(self.calib_feedback)
 
     # return to home position
     self.arm.set_pose_target(goal.home)
 
     # perform four point calibration
     self.vision.four_point_calibration(pnts,pose_to_list(o_pose))
+    self.calib_feedback.percentage = 100
+    self.calib_as.publish_feedback(self.calib_feedback)
 
     # stop controllers
     rospy.sleep(self.sleep_dur)

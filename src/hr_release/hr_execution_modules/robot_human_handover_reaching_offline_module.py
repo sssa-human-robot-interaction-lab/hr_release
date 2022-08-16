@@ -21,7 +21,7 @@ class RobotHumanHandoverReachingModule(RobotCommander):
     
     self.controller = cartesian_controller
   
-    self.r2h_handv_as = actionlib.SimpleActionServer('/robot_to_human_handover_reaching',RobotHumanHandoverReachingAction,execute_cb=self.r2h_handover_cb,auto_start=False)
+    self.r2h_handv_as = actionlib.SimpleActionServer('/robot_to_human_handover_reaching_offline',RobotHumanHandoverReachingAction,execute_cb=self.r2h_handover_cb,auto_start=False)
 
     self.rec_peak_acc = 0 # this value stores receiver peak acceleration
     self.open_dur = 0.5 # this value controls the release duration
@@ -31,10 +31,15 @@ class RobotHumanHandoverReachingModule(RobotCommander):
 
   def r2h_handover_cb(self, goal : RobotHumanHandoverReachingGoal):
     self.r2h_handv_result.success = True
-    self.r2h_handv_feedback.percentage = 100
+    self.r2h_handv_feedback.percentage = 0
 
     # initialize wrist_dynamics_module making use of previous calibration (assumed valid)
     self.wrist_dyn.start_node(calib=True)
+
+    # start to estimate proprioceptive informations and the apply zero
+    self.wrist_dyn.set_estimate_wrench()
+    rospy.sleep(self.sleep_dur)
+    self.wrist_dyn.do_zero()
 
     # start to store proprioceptive information to further thresholding, but first wait a bit to get filter adapt to calib offset
     rospy.sleep(self.sleep_dur)

@@ -40,7 +40,8 @@ include_directories(
 )
 
 catkin_install_python(PROGRAMS
-  scripts/handover_release_node.py
-  scripts/low_level_engine_node.py
+  scripts/hr_execution_modules_node.py
+  scripts/hr_release_gui_node.py
+  scripts/hr_release_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

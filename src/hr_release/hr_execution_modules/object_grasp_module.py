@@ -24,7 +24,7 @@ class ObjectGraspModule(RobotCommander):
 
   def grasp_cb(self, goal : ObjectGraspGoal):
     self.grasp_result.success = True
-    self.grasp_feedback.percentage = 100
+    self.grasp_feedback.percentage = 0
 
     # get hand in open position
     self.hand.set_joint_positions(goal.hand_preshape.data)
@@ -39,10 +39,10 @@ class ObjectGraspModule(RobotCommander):
     T_OT = pose_to_matrix(goal.tool_to_obj)
     T_BO = pose_to_matrix(self.vision.obj_pnt.get_pose())
     T = np.dot(T_BO,T_OT)
-
-    # return
     h_pose = matrix_to_pose(T)
     self.arm.set_pose_target(h_pose)
+    self.grasp_feedback.percentage += 30
+    self.grasp_as.publish_feedback(self.grasp_feedback)
 
     # fix target pose for grasp
     t_pose = pose_copy(h_pose)
@@ -57,6 +57,8 @@ class ObjectGraspModule(RobotCommander):
     self.arm.set_mod_trapz_traj_generator()
     self.arm.set_pose_target(t_pose,wait = False)
     self.arm.wait_for_trajectory_monitor()
+    self.grasp_feedback.percentage += 30
+    self.grasp_as.publish_feedback(self.grasp_feedback)
 
     # get hand in closed shape and stop control
     self.hand.set_joint_target_positions(target = goal.hand_target.data, goal_time = 1.0)
@@ -65,6 +67,8 @@ class ObjectGraspModule(RobotCommander):
 
     # go to back position
     self.arm.set_pose_target(h_pose)
+    self.grasp_feedback.percentage += 30
+    self.grasp_as.publish_feedback(self.grasp_feedback)
 
     # stop controllers
     rospy.sleep(self.sleep_dur)

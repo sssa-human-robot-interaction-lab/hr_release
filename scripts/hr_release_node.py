@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 
-import rospy,actionlib, tf.transformations as ts
+import rospy,actionlib
 
-from artificial_hands_py.artificial_hands_py_base import list_to_quat, quat_to_list, pose_copy
+from artificial_hands_py.artificial_hands_py_base import *
 
 from hr_release.msg import *
 
 def main():
 
-  rospy.init_node('fake_handover_module_test_node')
+  rospy.init_node('hr_release_node')
 
   vis_cal_cl = actionlib.SimpleActionClient('/vision_system_calibration',VisionSystemCalibrationAction)
   ft_cal_cl = actionlib.SimpleActionClient('/force_torque_sensor_calibration',ForceTorqueSensorCalibrationAction)
   obj_grasp_cl = actionlib.SimpleActionClient('/object_grasp',ObjectGraspAction)
   obj_rec_cl = actionlib.SimpleActionClient('/object_recognition',ObjectRecognitionAction)
-  r2h_handv_cl = actionlib.SimpleActionClient('/robot_to_human_handover_reaching',RobotHumanHandoverReachingAction)
+  r2h_handv_cl = actionlib.SimpleActionClient('/robot_to_human_handover_reaching_offline',RobotHumanHandoverReachingAction)
 
   ft_cal_cl.wait_for_server()
   obj_grasp_cl.wait_for_server()
@@ -64,7 +64,7 @@ def main():
   obj_rec_goal.max_accel = 0.6
   obj_rec_goal.max_angaccel = 0.6
 
-  # continue with reaching
+  # continue with offline reaching
   r2h_handv_goal = RobotHumanHandoverReachingGoal()
   r2h_handv_goal.back = pose_copy(ft_cal_goal.home)
   r2h_handv_goal.target_off.position.x = -0.251
@@ -101,10 +101,6 @@ def main():
     r2h_handv_cl.send_goal_and_wait(r2h_handv_goal)
 
     break
-
-  rospy.loginfo('bye!')
-
-  # rospy.spin()
 
 if __name__ == '__main__':
   main()

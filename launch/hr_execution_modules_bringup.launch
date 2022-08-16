@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-  <arg name="fake_ft" default="false" />
+  <arg name="fake_ft" default="true" />
 
   <!-- Launch the wrist dynamics node -->
   <include file="$(find artificial_hands_dynamics)/launch/wrist_dynamics_node.launch">
@@ -27,6 +27,6 @@
   <node pkg="artificial_hands_nodes" type="cartesian_trajectory_tf_monitor_node.py" name="cartesian_trajectory_tf_monitor_node" output="screen"/>
 
   <!-- Run the low level engine node -->
-  <node pkg="hr_release" type="low_level_engine_node.py" name="low_level_engine_node" output="screen"/>
+  <node pkg="hr_release" type="hr_execution_modules_node.py" name="hr_execution_modules_node" output="screen"/>
 
 </launch>

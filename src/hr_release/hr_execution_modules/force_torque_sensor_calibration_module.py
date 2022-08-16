@@ -1,4 +1,8 @@
 from cmath import pi
+from logging import shutdown
+from random import shuffle
+from threading import Thread
+from tkinter.tix import Tree
 
 import rospy, actionlib
 import tf.transformations as ts
@@ -26,7 +30,7 @@ class ForceTorqueSensorCalibrationModule(RobotCommander):
   def calibration_cb(self, goal : ForceTorqueSensorCalibrationGoal):
     self.calib_result.success = True
     self.calib_feedback.calib_ok = False
-    self.calib_feedback.percentage = 40
+    self.calib_feedback.percentage = 0
 
     # initialize wrist_dynamics_module
     self.wrist_dyn.subscribe()
@@ -57,15 +61,8 @@ class ForceTorqueSensorCalibrationModule(RobotCommander):
     self.wrist_dyn.stop_loop()
     self.wrist_dyn.start_node(calib = False)
 
-    # c_pose = Pose()
-    # c_pose.position = goal.home.position
-    c_pose = self.arm.get_current_frame().pose
-    
-    # align sensor with base frame
-    # c_pose.orientation = list_to_quat([0,0,0,1])
-    # self.add_calibration_point(c_pose)
-
     # get current sensor orientation and rotate on its own x-axis
+    c_pose = self.arm.get_current_frame().pose
     rot = ts.quaternion_matrix(quat_to_list(c_pose.orientation))
     c_pose.orientation = list_to_quat(ts.quaternion_multiply(ts.quaternion_about_axis(pi/2,rot[:,0]),quat_to_list(c_pose.orientation)))
     self.add_calibration_point(c_pose)
@@ -74,7 +71,7 @@ class ForceTorqueSensorCalibrationModule(RobotCommander):
     rot = ts.quaternion_matrix(quat_to_list(c_pose.orientation))
     c_pose.orientation = list_to_quat(ts.quaternion_multiply(ts.quaternion_about_axis(-pi/2,rot[:,2]),quat_to_list(c_pose.orientation)))
     self.add_calibration_point(c_pose)
-    for c in range(0,3):
+    for c in range(3):
       c_pose.orientation = list_to_quat(ts.quaternion_multiply(ts.quaternion_about_axis(pi/2,rot[:,2]),quat_to_list(c_pose.orientation)))
       self.add_calibration_point(c_pose)
     
@@ -83,15 +80,17 @@ class ForceTorqueSensorCalibrationModule(RobotCommander):
     c_pose.orientation = list_to_quat(ts.quaternion_multiply(ts.quaternion_about_axis(-pi/2,rot[:,0]),quat_to_list(c_pose.orientation)))
     self.add_calibration_point(c_pose)
 
-    # return to home (z up, in two steps to be sure to move back)
+    # return to home (z up and then rotate, subdivide in steps to be sure to move back)
     rot = ts.quaternion_matrix(quat_to_list(c_pose.orientation))
     c_pose.orientation = list_to_quat(ts.quaternion_multiply(ts.quaternion_about_axis(pi/2,rot[:,0]),quat_to_list(c_pose.orientation)))
     self.add_calibration_point(c_pose)
+
     rot = ts.quaternion_matrix(quat_to_list(c_pose.orientation))
     c_pose.orientation = list_to_quat(ts.quaternion_multiply(ts.quaternion_about_axis(pi/2,rot[:,0]),quat_to_list(c_pose.orientation)))
     self.add_calibration_point(c_pose)
+
     rot = ts.quaternion_matrix(quat_to_list(c_pose.orientation))
-    for c in range(0,2):
+    for c in range(2):
       c_pose.orientation = list_to_quat(ts.quaternion_multiply(ts.quaternion_about_axis(-pi/2,rot[:,2]),quat_to_list(c_pose.orientation)))
       self.add_calibration_point(c_pose)
 

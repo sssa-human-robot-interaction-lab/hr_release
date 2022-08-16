@@ -29,7 +29,7 @@ class ObjectRecognitionModule(RobotCommander):
 
   def recognition_cb(self, goal : ObjectRecognitionGoal):
     self.recog_result.success = True
-    self.recog_feedback.percentage = 100
+    self.recog_feedback.percentage = 0
 
     # initialize wrist_dynamics_module making use of previous calibration (assumed valid)
     self.wrist_dyn.start_node(calib=True)
@@ -41,10 +41,14 @@ class ObjectRecognitionModule(RobotCommander):
     self.arm.set_poly_567_traj_generator()
     self.arm.switch_to_cartesian_controller(self.controller)
     self.arm.set_pose_target(goal.home)
+    self.recog_feedback.percentage += 30
+    self.recog_as.publish_feedback(self.recog_feedback)
 
     # start to fill wrist_dynamics matrix
     self.wrist_dyn.set_save_dynamics()
     rospy.sleep(self.sleep_dur)
+    self.recog_feedback.percentage += 30
+    self.recog_as.publish_feedback(self.recog_feedback)
 
     # perform estimate trajectory
     self.estimate_trajectory()
