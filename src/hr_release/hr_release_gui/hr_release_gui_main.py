@@ -8,10 +8,10 @@ class HandoverReleaseExperimentMainControl(QWidget):
     self.new_subject_button = QPushButton('New subject',self)
     self.terminate_subject_button = QPushButton('Terminate subject',self)
     
-    self.calib_vision_button = ResultButton('Calibrate vision',self,self.set_enabled)
-    self.calib_sensor_button = ResultButton('Calibrate sensor',self,self.set_enabled)
-    self.object_grasp_button = ResultButton('Grasp object',self,self.set_enabled)
-    self.object_recog_button = ResultButton('Object recognition',self,self.set_enabled)
+    self.calib_vision_button = QResultButton('Calibrate vision',self,self.set_enabled)
+    self.calib_sensor_button = QResultButton('Calibrate sensor',self,self.set_enabled)
+    self.object_grasp_button = QResultButton('Grasp object',self,self.set_enabled)
+    self.object_recog_button = QResultButton('Object recognition',self,self.set_enabled)
 
     # self.set_disabled()
 
@@ -29,9 +29,9 @@ class HandoverReleaseExperimentMainControl(QWidget):
     self.subject_age_spinbox.setValue(30)
     self.subject_age_spinbox.setSingleStep(1)
 
-    self.subject_sex_spinbox = QComboBox()
-    self.subject_sex_spinbox.addItem('M')
-    self.subject_sex_spinbox.addItem('F')
+    self.subject_gender_spinbox = QComboBox()
+    self.subject_gender_spinbox.addItem('M')
+    self.subject_gender_spinbox.addItem('F')
 
     subject_name_label = QLabel('Subject:')
     subject_name_label.setAlignment(Qt.AlignCenter | Qt.AlignRight)
@@ -44,7 +44,7 @@ class HandoverReleaseExperimentMainControl(QWidget):
     subject_layout.addWidget(self.subject_name_line)
     subject_layout.addWidget(subject_age_label)
     subject_layout.addWidget(self.subject_age_spinbox)
-    subject_layout.addWidget(self.subject_sex_spinbox)
+    subject_layout.addWidget(self.subject_gender_spinbox)
     
     subject_buttons_layout = QHBoxLayout()
     subject_buttons_layout.addWidget(self.new_subject_button)

@@ -3,15 +3,15 @@ import sys, random
 import rospy,actionlib
 
 from geometry_msgs.msg import TransformStamped
-from artificial_hands_msgs.msg import WristDynamicsStamped
+from artificial_hands_msgs.msg import *
 from mia_hand_msgs.msg import Mia
 
 from hr_release.msg import *
 from hr_release.hr_release_gui.hr_release_gui_main import *
 from hr_release.hr_release_gui.hr_release_gui_block import *
-from hr_release.rosbag_manager_base import ROSBagManager
+from hr_release.rosbag_manager_base import QROSBagManager
 
-class HandoverReleaseExperimentGUI(QWidget, ROSBagManager):
+class HandoverReleaseExperimentGUI(QROSBagManager):
 
   bag_dir = '/home/penzo/Desktop'
 
@@ -19,7 +19,7 @@ class HandoverReleaseExperimentGUI(QWidget, ROSBagManager):
   'wrist_dynamics_data' : WristDynamicsStamped,
   'mia_hand/mia' : Mia, 
   'vicon/MagicBall/ball' : TransformStamped,
-  'vicon_state/MagicBall/ball' : TransformStamped,
+  'vicon_state/MagicBall/ball' : CartesianTrajectoryPointStamped,
   }
 
   r2h_timing = {'slow' : 0.4, 'fast' : 1.6}
@@ -34,6 +34,8 @@ class HandoverReleaseExperimentGUI(QWidget, ROSBagManager):
 
   def __init__(self, goals : dict) -> None:
     super().__init__()
+
+    self.bag.bag_create(self.bag_dict)
 
     self.goals = goals
 
@@ -74,13 +76,7 @@ class HandoverReleaseExperimentGUI(QWidget, ROSBagManager):
     if self.main.subject_name_line.text() == '':
       self.main.subject_name_line.setText('Unkown')
 
-    if confirm_dialog(self,"Create new subject {}?".format(self.main.subject_name_line.text())):
-    
-      self.blocks_id.reverse()
-      for id in self.blocks_id:
-        self.tab_widget.removeTab(id)
-      self.blocks_id.clear()
-      self.blocks.clear()
+    if q_confirm_dialog(self,"Create new subject {}?".format(self.main.subject_name_line.text())):
 
       block_names = list(self.block_dict.keys())
       random.shuffle(block_names)
@@ -100,16 +96,25 @@ class HandoverReleaseExperimentGUI(QWidget, ROSBagManager):
       for block in self.blocks[1:]:
         block.setDisabled(True)
 
-      self.bag_mkdir(self.bag_dir,self.bag_dict)
+      readme = "{name}\n{age}\n{gend}".format(name = self.main.subject_name_line.text(), 
+      age = str(self.main.subject_age_spinbox.value()), gend = self.main.subject_gender_spinbox.currentText())
+      
+      self.bag.bag_mkdir(self.bag_dir+'/{}'.format(self.main.subject_name_line.text()),readme)
   
   def on_terminate_subject(self):
 
-    if confirm_dialog(self,"Terminate subject {}?".format(self.main.subject_name_line.text())):
+    if q_confirm_dialog(self,"Terminate subject {}?".format(self.main.subject_name_line.text())):
    
       self.main.calib_vision_button.reset()
       self.main.calib_sensor_button.reset()
       self.main.object_grasp_button.reset()
       self.main.object_recog_button.reset()
+
+      self.blocks_id.reverse()
+      for id in self.blocks_id:
+        self.tab_widget.removeTab(id)
+      self.blocks_id.clear()
+      self.blocks.clear()
 
   def on_calib_vision(self):
     vis_cal_goal = self.goals['vis_cal']
@@ -121,7 +126,7 @@ class HandoverReleaseExperimentGUI(QWidget, ROSBagManager):
     self.ft_cal_cl.send_goal(ft_cal_goal,done_cb = self.main.calib_sensor_button.set_result_button,
     feedback_cb = self.main.calib_sensor_button.set_progress_button)  
   
-  def on_grasp_object(self, button : ResultButton):
+  def on_grasp_object(self, button : QResultButton):
     obj_grasp_goal = self.goals['obj_grasp']
     self.obj_grasp_cl.send_goal(obj_grasp_goal,done_cb = button.set_result_button,
     feedback_cb = button.set_progress_button)
@@ -131,7 +136,7 @@ class HandoverReleaseExperimentGUI(QWidget, ROSBagManager):
     self.obj_rec_cl.send_goal(obj_rec_goal,done_cb = self.main.object_recog_button.set_result_button,
     feedback_cb = self.main.object_recog_button.set_progress_button)
   
-  def on_reach_to_handover(self, button : ResultButton, block_name : str):
+  def on_reach_to_handover(self, button : QResultButton, block_name : str):
     r2h_handv_goal = self.goals['r2h_handv']
     r2h_handv_goal : RobotHumanHandoverReachingGoal
 

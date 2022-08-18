@@ -7,16 +7,16 @@ from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 
 from artificial_hands_py.artificial_hands_py_base import *
 
-def confirm_dialog(parent,str) -> bool:
+def q_confirm_dialog(parent,str) -> bool:
     dlg = QMessageBox(parent)
     dlg.setText(str)
     dlg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
     dlg.setIcon(QMessageBox.Question)
     return dlg.exec() == QMessageBox.Yes
 
-class ResultButton(QPushButton):
+class QResultButton(QPushButton):
 
-  changed = pyqtSignal(bool)
+  changed = pyqtSignal()
 
   def __init__(self,button : str, parent, result_cb):
     super().__init__(button, parent)
@@ -28,7 +28,7 @@ class ResultButton(QPushButton):
     self.set_button_rgb([255,0,0,self.alpha])
     
   def set_result_button(self, goal, result):
-    self.changed.emit(result.success)
+    self.changed.emit()
     self.result = result.success
     self.result_cb()
     if result.success:

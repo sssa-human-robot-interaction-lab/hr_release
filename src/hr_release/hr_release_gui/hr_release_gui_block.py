@@ -1,7 +1,7 @@
-from hr_release.rosbag_manager_base import ROSBagManager
+from hr_release.rosbag_manager_base import QROSBagManager
 from hr_release.hr_release_gui.hr_release_gui_base import *
 
-class HandoverReleaseExperimentCondition(QWidget, ROSBagManager):
+class HandoverReleaseExperimentCondition(QROSBagManager):
 
   def __init__(self, block_name : str, id : int):
     super().__init__()
@@ -15,8 +15,8 @@ class HandoverReleaseExperimentCondition(QWidget, ROSBagManager):
     self.store_push_button = QPushButton('Store',self)
     self.reset_push_button = QPushButton('Reset',self)
 
-    self.grasp_push_button = ResultButton('Grasp',self,self.set_reach_enabled)
-    self.reach_push_button = ResultButton('Reach',self,self.set_store_enabled)
+    self.grasp_push_button = QResultButton('Grasp',self,self.set_reach_enabled)
+    self.reach_push_button = QResultButton('Reach',self,self.set_store_enabled)
 
     self.grasp_push_button.clicked.connect(self.set_disabled)
     self.reach_push_button.clicked.connect(self.set_disabled)
@@ -24,6 +24,8 @@ class HandoverReleaseExperimentCondition(QWidget, ROSBagManager):
     self.reach_push_button.clicked.connect(self.on_start_condition)
     self.store_push_button.clicked.connect(self.on_store_condition)
     self.reset_push_button.clicked.connect(self.on_reset_condition)
+
+    self.reach_push_button.changed.connect(self.on_changed_result_button)
 
     self.set_disabled()
 
@@ -40,7 +42,7 @@ class HandoverReleaseExperimentCondition(QWidget, ROSBagManager):
     self.store_push_button.setDisabled(True)
     self.reset_push_button.setDisabled(True)
     self.grasp_push_button.setDisabled(True)
-    self.reach_push_button.setDisabled(True)
+    #self.reach_push_button.setDisabled(True)
 
   def set_reach_enabled(self):
     if self.grasp_push_button.result:
@@ -53,23 +55,23 @@ class HandoverReleaseExperimentCondition(QWidget, ROSBagManager):
       self.reset_push_button.setEnabled(True)
   
   def on_start_condition(self, id):
-    self.bag_name = self.bag_open(self.name)
+    self.bag_name = self.bag.bag_open(self.name)
 
   def on_store_condition(self):
-    if confirm_dialog(self, 'Store?'):
+    if q_confirm_dialog(self, 'Store?'):
       self.store_push_button.setDisabled(True)
 
   def on_reset_condition(self):
-    if confirm_dialog(self, 'Reset?'):
-      self.bag_remove(self.bag_name)
+    if q_confirm_dialog(self, 'Reset?'):
+      self.bag.bag_remove(self.bag_name)
       self.set_disabled()
       self.grasp_push_button.reset()
       self.reach_push_button.reset()
       self.grasp_push_button.setEnabled(True)
 
-  @pyqtSlot(int)
-  def on_changed_result_button(self, value):
-    self.bag_close()
+  @pyqtSlot()
+  def on_changed_result_button(self):
+    self.bag.bag_close()
 
 class HandoverReleaseExperimentBlock(QWidget):
 
