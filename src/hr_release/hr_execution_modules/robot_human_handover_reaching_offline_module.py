@@ -56,6 +56,8 @@ class RobotHumanHandoverReachingModule(RobotCommander):
     self.target = goal.target_off
     self.arm.set_pose_target(self.target,False)
     self.update_target_state()
+    self.r2h_handv_feedback.percentage += 30
+    self.r2h_handv_as.publish_feedback(self.r2h_handv_feedback)
 
     # reaching fixed distance to target, then start to trigger
     rate = rospy.Rate(30)
@@ -73,12 +75,14 @@ class RobotHumanHandoverReachingModule(RobotCommander):
     open_thread = Thread(target=self.release,args=[goal.hand_open_pos.data,open_dur])
     
     # update online target according to human hand pose, stop arm at contact time
-    self.wrist_dyn.detection.dynamic_contact = False
+    self.wrist_dyn.detection.dynamic_contact = True
     while not self.wrist_dyn.detection.dynamic_contact:  
       self.update_target_state()
       rate.sleep() 
     open_thread.start()
     self.arm.stop(wait = False)
+    self.r2h_handv_feedback.percentage += 30
+    self.r2h_handv_as.publish_feedback(self.r2h_handv_feedback)
       
     # wait until hand is open
     open_thread.join()
@@ -86,6 +90,8 @@ class RobotHumanHandoverReachingModule(RobotCommander):
     # wait a bit before set wrist_dynamics_module to idle
     rospy.sleep(rospy.Duration(goal.sleep))
     self.wrist_dyn.stop_loop()
+    self.r2h_handv_feedback.percentage += 30
+    self.r2h_handv_as.publish_feedback(self.r2h_handv_feedback)
 
     # wait a bit and retire to back position
     rospy.sleep(rospy.Duration(goal.sleep))

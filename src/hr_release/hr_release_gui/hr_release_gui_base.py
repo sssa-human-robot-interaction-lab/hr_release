@@ -3,7 +3,7 @@ from functools import partial
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QColor
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 
 from artificial_hands_py.artificial_hands_py_base import *
 
@@ -16,6 +16,8 @@ def confirm_dialog(parent,str) -> bool:
 
 class ResultButton(QPushButton):
 
+  changed = pyqtSignal(bool)
+
   def __init__(self,button : str, parent, result_cb):
     super().__init__(button, parent)
 
@@ -26,6 +28,7 @@ class ResultButton(QPushButton):
     self.set_button_rgb([255,0,0,self.alpha])
     
   def set_result_button(self, goal, result):
+    self.changed.emit(result.success)
     self.result = result.success
     self.result_cb()
     if result.success:

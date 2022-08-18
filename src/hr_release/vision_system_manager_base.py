@@ -5,8 +5,7 @@ from collections import deque
 
 import rospy, tf, tf.transformations as ts
 
-from geometry_msgs.msg import TransformStamped, Pose, Twist
-from cartesian_control_msgs.msg import CartesianTrajectoryPoint
+from geometry_msgs.msg import TransformStamped, Pose
 
 from artificial_hands_msgs.msg import CartesianTrajectoryPointStamped
 from artificial_hands_py.artificial_hands_py_base import *

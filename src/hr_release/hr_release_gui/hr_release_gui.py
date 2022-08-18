@@ -2,21 +2,35 @@ import sys, random
 
 import rospy,actionlib
 
+from geometry_msgs.msg import TransformStamped
+from artificial_hands_msgs.msg import WristDynamicsStamped
+from mia_hand_msgs.msg import Mia
+
 from hr_release.msg import *
 from hr_release.hr_release_gui.hr_release_gui_main import *
 from hr_release.hr_release_gui.hr_release_gui_block import *
+from hr_release.rosbag_manager_base import ROSBagManager
 
+class HandoverReleaseExperimentGUI(QWidget, ROSBagManager):
 
-class HandoverReleaseExperimentGUI(QWidget):
+  bag_dir = '/home/penzo/Desktop'
+
+  bag_dict = {'wrist_dynamics_data' : WristDynamicsStamped, 
+  'wrist_dynamics_data' : WristDynamicsStamped,
+  'mia_hand/mia' : Mia, 
+  'vicon/MagicBall/ball' : TransformStamped,
+  'vicon_state/MagicBall/ball' : TransformStamped,
+  }
 
   r2h_timing = {'slow' : 0.4, 'fast' : 1.6}
-  r2h_release = {'slow' : 1.0, 'fast' : 0.0}
+  r2h_release = {'slow' : 1.0, 'fast' : 0.0, 'adaptive' : -1.0}
+  
   block_dict = {'A1' : {'timing' : 'slow', 'release' : 'adaptive'},
-   'F11' : {'timing' : 'slow', 'release' : 'slow'},
-   'F12' : {'timing' : 'slow', 'release' : 'fast'},
-   'A2' : {'timing' : 'fast', 'release' : 'adaptive'},
-   'F21' : {'timing' : 'fast', 'release' : 'slow'},
-   'F22' : {'timing' : 'fast', 'release' : 'fast'}}
+  'F11' : {'timing' : 'slow', 'release' : 'slow'},
+  'F12' : {'timing' : 'slow', 'release' : 'fast'},
+  'A2' : {'timing' : 'fast', 'release' : 'adaptive'},
+  'F21' : {'timing' : 'fast', 'release' : 'slow'},
+  'F22' : {'timing' : 'fast', 'release' : 'fast'}}
 
   def __init__(self, goals : dict) -> None:
     super().__init__()
@@ -50,6 +64,8 @@ class HandoverReleaseExperimentGUI(QWidget):
 
     self.main.calib_sensor_button.clicked.connect(self.on_calib_sensor)
     self.main.calib_vision_button.clicked.connect(self.on_calib_vision)
+    self.main.object_grasp_button.clicked.connect(partial(self.on_grasp_object, self.main.object_grasp_button))
+    self.main.object_recog_button.clicked.connect(self.on_rec_object)
     
     self.setLayout(main_layout)
 
@@ -83,6 +99,8 @@ class HandoverReleaseExperimentGUI(QWidget):
       
       for block in self.blocks[1:]:
         block.setDisabled(True)
+
+      self.bag_mkdir(self.bag_dir,self.bag_dict)
   
   def on_terminate_subject(self):
 
