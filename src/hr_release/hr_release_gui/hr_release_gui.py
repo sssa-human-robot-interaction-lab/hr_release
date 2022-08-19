@@ -1,4 +1,8 @@
+from cmath import exp
 import sys, random
+
+from shutil import rmtree
+from os import remove
 
 import rospy,actionlib
 
@@ -78,6 +82,9 @@ class HandoverReleaseExperimentGUI(QROSBagManager):
 
     if q_confirm_dialog(self,"Create new subject {}?".format(self.main.subject_name_line.text())):
 
+      self.block_scores_dict =  {'A1' : 0, 'F11' : 0, 'F12' : 0, 'A2' : 0, 'F21' : 0, 'F22' : 0}
+      self.block_confirm_dict =  {'A1' : False, 'F11' : False, 'F12' : False, 'A2' : False, 'F21' : False, 'F22' : False}
+
       block_names = list(self.block_dict.keys())
       random.shuffle(block_names)
       for block_name in block_names:
@@ -85,7 +92,10 @@ class HandoverReleaseExperimentGUI(QROSBagManager):
       
       block : HandoverReleaseExperimentBlock
       for block in self.blocks:
-        self.blocks_id.append(self.tab_widget.addTab(block,block.block_name))
+        id = self.tab_widget.addTab(block,block.block_name)
+        self.blocks_id.append(id)
+        block.score_confirmed.connect(self.on_score_confirmed)
+        block.next_block_button.clicked.connect(partial(self.on_next_block,id))
       
       for block in self.blocks:
         condition : HandoverReleaseExperimentCondition
@@ -99,22 +109,68 @@ class HandoverReleaseExperimentGUI(QROSBagManager):
       readme = "{name}\n{age}\n{gend}".format(name = self.main.subject_name_line.text(), 
       age = str(self.main.subject_age_spinbox.value()), gend = self.main.subject_gender_spinbox.currentText())
       
-      self.bag.bag_mkdir(self.bag_dir+'/{}'.format(self.main.subject_name_line.text()),readme)
+      self.subject_dir = self.bag.bag_mkdir(self.bag_dir+'/{}'.format(self.main.subject_name_line.text()),readme)
   
+  def closeEvent(self, event):
+    if self.on_terminate_subject():
+        event.accept() 
+    else:
+        event.ignore()
+
+  def on_next_block(self,id):
+    self.blocks[id-1].setDisabled(True)
+    self.blocks[id].setEnabled(True)
+    self.tab_widget.setCurrentIndex(id+1)
+  
+  @pyqtSlot(dict)
+  def on_score_confirmed(self, score_dict):
+    with open(self.subject_dir+'/SCORES_active.txt','a') as f:
+      f.write("{name},{score},".format(name=score_dict['block_name'],score=score_dict['score']))
+    self.block_scores_dict[score_dict['block_name']] = score_dict['score']
+    self.block_confirm_dict[score_dict['block_name']] = True
+  
+  def terminate_subject(self):
+    
+    self.main.calib_vision_button.reset()
+    self.main.calib_sensor_button.reset()
+    self.main.object_grasp_button.reset()
+    self.main.object_recog_button.reset()
+
+    self.blocks_id.reverse()
+    for id in self.blocks_id:
+      self.tab_widget.removeTab(id)
+    self.blocks_id.clear()
+    self.blocks.clear()
+
+    del self.block_scores_dict, self.block_confirm_dict
+
   def on_terminate_subject(self):
 
-    if q_confirm_dialog(self,"Terminate subject {}?".format(self.main.subject_name_line.text())):
-   
-      self.main.calib_vision_button.reset()
-      self.main.calib_sensor_button.reset()
-      self.main.object_grasp_button.reset()
-      self.main.object_recog_button.reset()
+    try:
+      self.block_scores_dict.values()
+    except:
+      return True
 
-      self.blocks_id.reverse()
-      for id in self.blocks_id:
-        self.tab_widget.removeTab(id)
-      self.blocks_id.clear()
-      self.blocks.clear()
+    if not all(self.block_scores_dict.values()):
+      if q_confirm_dialog(self,"Not all blocks are confirmed, discard subject {}?".format(self.main.subject_name_line.text())):
+        rmtree(self.subject_dir)
+        self.terminate_subject()
+        return True
+
+    if q_confirm_dialog(self,"Terminate subject {}?".format(self.main.subject_name_line.text())):
+
+      with open(self.subject_dir+'/SCORES.txt','w') as f:
+        for block_name in self.block_scores_dict.keys():
+          if self.block_confirm_dict[block_name]:
+            f.write("{name},{score},".format(name=block_name,score=self.block_scores_dict[block_name]))
+      
+      remove(self.subject_dir+'/SCORES_active.txt')
+   
+      self.terminate_subject()
+
+      return True
+    
+    return False
 
   def on_calib_vision(self):
     vis_cal_goal = self.goals['vis_cal']

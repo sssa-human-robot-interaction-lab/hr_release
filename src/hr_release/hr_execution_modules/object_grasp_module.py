@@ -56,7 +56,7 @@ class ObjectGraspModule(RobotCommander):
     self.arm.set_max_angvel(goal.max_angvel)
     self.arm.set_mod_trapz_traj_generator()
     self.arm.set_pose_target(t_pose,wait = False)
-    self.arm.wait_for_trajectory_monitor()
+    self.arm.wait_for_trajectory_monitor(99)
     self.grasp_feedback.percentage += 30
     self.grasp_as.publish_feedback(self.grasp_feedback)
 

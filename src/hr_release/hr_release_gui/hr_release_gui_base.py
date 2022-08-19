@@ -23,18 +23,20 @@ class QResultButton(QPushButton):
 
     self.result_cb = result_cb
     self.result = False
+    self.success = False
     self.percentage = 0
     self.alpha = 50
     self.set_button_rgb([255,0,0,self.alpha])
     
   def set_result_button(self, goal, result):
-    self.changed.emit()
-    self.result = result.success
+    self.result = True
+    self.success = result.success
     self.result_cb()
     if result.success:
       self.set_button_rgb([0,255,0,self.alpha])
     else:
       self.set_button_rgb([255,0,0,self.alpha])
+    self.changed.emit()
   
   def set_progress_button(self, feedback):
     for c in range(feedback.percentage-self.percentage):
@@ -52,3 +54,4 @@ class QResultButton(QPushButton):
   def reset(self):
     self.set_button_rgb([255,0,0,self.alpha])
     self.result = False
+    self.success = False

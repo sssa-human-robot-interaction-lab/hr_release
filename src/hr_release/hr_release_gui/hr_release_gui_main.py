@@ -13,7 +13,7 @@ class HandoverReleaseExperimentMainControl(QWidget):
     self.object_grasp_button = QResultButton('Grasp object',self,self.set_enabled)
     self.object_recog_button = QResultButton('Object recognition',self,self.set_enabled)
 
-    # self.set_disabled()
+    self.set_disabled()
 
     self.calib_vision_button.setEnabled(True)
     
@@ -77,10 +77,10 @@ class HandoverReleaseExperimentMainControl(QWidget):
   def set_enabled(self):
     self.calib_vision_button.setEnabled(True)
     self.calib_sensor_button.setEnabled(True)
-    if self.calib_sensor_button.result and self.calib_vision_button.result:
+    if self.calib_sensor_button.success and self.calib_vision_button.success:
       self.object_grasp_button.setEnabled(True)
-      if self.object_grasp_button.result:
+      if self.object_grasp_button.success:
         self.object_recog_button.setEnabled(True)
-        if self.object_recog_button.result:
+        if self.object_recog_button.success:
           self.new_subject_button.setEnabled(True)
           self.terminate_subject_button.setEnabled(True) 
