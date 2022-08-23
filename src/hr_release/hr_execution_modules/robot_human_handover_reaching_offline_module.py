@@ -41,28 +41,29 @@ class RobotHumanHandoverReachingModule(RobotCommander):
     rospy.sleep(self.sleep_dur)
     self.wrist_dyn.do_zero()
 
-    # start to store proprioceptive information to further thresholding, but first wait a bit to get filter adapt to calib offset
+    # start to store proprioceptive information for further thresholding, but first wait a bit to get filter adapt to zero
     rospy.sleep(self.sleep_dur)
     self.wrist_dyn.set_save_interaction()
     
     # set arm control
+    self.arm.switch_to_cartesian_controller(self.controller)
     self.arm.set_stop_time(goal.stop_time)
     self.arm.set_max_accel(goal.max_accel)
     self.arm.set_max_angaccel(goal.max_angaccel)
-    self.arm.set_poly_567_traj_generator()
+    self.arm.set_poly_345_traj_generator()
     self.arm.switch_to_cartesian_controller(self.controller)
     
     # go to the target position
     self.target = goal.target_off
     self.arm.set_pose_target(self.target,False)
-    self.update_target_state()
+    self.update_receiver_state()
     self.r2h_handv_feedback.percentage += 30
     self.r2h_handv_as.publish_feedback(self.r2h_handv_feedback)
 
-    # reaching fixed distance to target, then start to trigger
+    # reaching fixed distance from receiver hand, then start to trigger
     rate = rospy.Rate(100)
-    while self.distance > 0.2:
-      self.update_target_state()
+    while self.distance > 0.5:
+      self.update_receiver_state()
       rate.sleep()  
     self.wrist_dyn.set_trigger_dynamics()
 
@@ -72,7 +73,7 @@ class RobotHumanHandoverReachingModule(RobotCommander):
     # update online target according to human hand pose, stop arm at contact time
     self.wrist_dyn.detection.dynamic_contact = False
     while not self.wrist_dyn.detection.dynamic_contact:  
-      self.update_target_state()
+      self.update_receiver_state()
       rate.sleep() 
     open_thread.start()
     self.arm.stop(wait = False)
@@ -92,23 +93,17 @@ class RobotHumanHandoverReachingModule(RobotCommander):
     rospy.sleep(rospy.Duration(goal.sleep))
     self.arm.set_poly_567_traj_generator()
     self.arm.switch_to_cartesian_controller(self.controller)
-    self.arm.set_pose_target(goal.back)
+    self.arm.set_pose_target(goal.back,wait_tf=True)
 
     # stop controllers
     rospy.sleep(self.sleep_dur)
     self.arm.pause_all_controllers()
     self.r2h_handv_as.set_succeeded(self.r2h_handv_result)
   
-  def update_target_state(self):
-    self.lock.acquire()
-    self.update_receiver_state()
-    c_position = self.arm.get_current_frame().pose.position
-    self.distance = pow(pow(c_position.x - self.target.position.x,2)+pow(c_position.y - self.target.position.y,2)+pow(c_position.z - self.target.position.z,2),0.5)
-    self.r2h_handv_feedback.distance_to_target = self.distance
-    self.r2h_handv_as.publish_feedback(self.r2h_handv_feedback)
-    self.lock.release()
-
   def update_receiver_state(self):
+
+    self.lock.acquire()
+    
     x = self.vision.rec_pnt.get_acceleration_norm()
     if x > self.rec_peak_acc and x < 10:
       self.rec_peak_acc = x
@@ -116,6 +111,15 @@ class RobotHumanHandoverReachingModule(RobotCommander):
       self.open_dur = -1.094e-05*m*m + 0.00867*m - 1.296 #release duration to hand open goal time
       if self.open_dur < 0:
         self.open_dur = 0.0
+
+    receiver_pos = self.vision.rec_pnt.get_position()
+    c_position = self.arm.get_current_frame().pose.position
+    self.distance = pow(pow(c_position.x - receiver_pos[0],2)+pow(c_position.y - receiver_pos[1],2)+pow(c_position.z - receiver_pos[2],2),0.5)
+
+    self.r2h_handv_feedback.distance_to_target = self.distance
+    self.r2h_handv_as.publish_feedback(self.r2h_handv_feedback)
+
+    self.lock.release()    
 
   def release(self, release_type : int, release_duration : float, target_pos : list):
     if release_type == RobotHumanHandoverReachingGoal.ADAPTIVE:   

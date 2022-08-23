@@ -40,10 +40,10 @@ class ForceTorqueSensorCalibrationModule(RobotCommander):
     self.hand.set_joint_target_positions([0.2,0.6,0.0],0.6)
 
     # go to home position
+    self.arm.switch_to_cartesian_controller(self.controller)
     self.arm.set_max_accel(goal.max_accel)
     self.arm.set_max_angaccel(goal.max_angaccel)
-    self.arm.set_poly_567_traj_generator()
-    self.arm.switch_to_cartesian_controller(self.controller)
+    self.arm.set_poly_345_traj_generator()
     self.arm.set_pose_target(goal.home)
 
     # check current (if any) calibration

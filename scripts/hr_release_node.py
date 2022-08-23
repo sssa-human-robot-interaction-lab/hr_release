@@ -52,8 +52,8 @@ def main():
   obj_grasp_goal.hand_preshape.data = [0.2,0.6,0.0]
   obj_grasp_goal.hand_target.data = [0.45,0.9,0.4]
   obj_grasp_goal.delta.z = 0.1
-  obj_grasp_goal.max_accel = 0.6
-  obj_grasp_goal.max_angaccel = 0.6
+  obj_grasp_goal.max_accel = 0.8
+  obj_grasp_goal.max_angaccel = 0.8
   obj_grasp_goal.max_vel = 0.4
   obj_grasp_goal.max_angvel = 0.4
   obj_grasp_goal.alpha = 0.2
@@ -74,8 +74,8 @@ def main():
   r2h_handv_goal.target_off.orientation.y = -0.224
   r2h_handv_goal.target_off.orientation.z = -0.170
   r2h_handv_goal.target_off.orientation.w = 0.591
-  r2h_handv_goal.max_accel = 1.4
-  r2h_handv_goal.max_angaccel = 1.4
+  r2h_handv_goal.max_accel = 1.0
+  r2h_handv_goal.max_angaccel = 1.0
   r2h_handv_goal.stop_time = 0.5
   r2h_handv_goal.sleep = 1
   r2h_handv_goal.hand_open_pos.data = [0.2,0.6,0.0]
@@ -92,10 +92,10 @@ def main():
     #   break
 
     # start or check ft sensor calibration
-    ft_cal_cl.send_goal_and_wait(ft_cal_goal)
-    if not ft_cal_cl.get_result().success:
-      rospy.logerr('Sensor calibration failed!')
-      break
+    # ft_cal_cl.send_goal_and_wait(ft_cal_goal)
+    # if not ft_cal_cl.get_result().success:
+    #   rospy.logerr('Sensor calibration failed!')
+    #   break
     
     # grasp
     obj_grasp_cl.send_goal_and_wait(obj_grasp_goal)

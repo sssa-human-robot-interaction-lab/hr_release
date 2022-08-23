@@ -82,5 +82,7 @@ class HandoverReleaseExperimentMainControl(QWidget):
       if self.object_grasp_button.success:
         self.object_recog_button.setEnabled(True)
         if self.object_recog_button.success:
+          self.set_disabled()
           self.new_subject_button.setEnabled(True)
           self.terminate_subject_button.setEnabled(True) 
+          self.calib_vision_button.setEnabled(True)

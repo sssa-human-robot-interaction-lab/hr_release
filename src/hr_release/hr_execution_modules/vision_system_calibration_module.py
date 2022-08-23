@@ -32,11 +32,11 @@ class VisionSystemCalibrationModule(RobotCommander):
     self.hand.set_joint_target_positions([0.2,0.6,0.0],0.6)
 
     # go to home position
+    self.arm.switch_to_cartesian_controller(self.controller)
     self.arm.set_max_accel(goal.max_accel)
     self.arm.set_max_angaccel(goal.max_angaccel)
-    self.arm.set_poly_567_traj_generator()
-    self.arm.switch_to_cartesian_controller(self.controller)
-    self.arm.set_pose_target(goal.home)
+    self.arm.set_poly_345_traj_generator()
+    self.arm.set_pose_target(goal.home,wait_tf=True)
     rospy.sleep(self.sleep_dur)
     self.calib_feedback.percentage = 30
     self.calib_as.publish_feedback(self.calib_feedback)
@@ -52,7 +52,7 @@ class VisionSystemCalibrationModule(RobotCommander):
     # move +x
     c_pose = self.arm.get_current_frame().pose
     c_pose.position.x += goal.delta
-    self.arm.set_pose_target(c_pose)
+    self.arm.set_pose_target(c_pose,wait_tf=True)
     rospy.sleep(self.sleep_dur)
     pnts.append(self.vision.giv_pnt.get_position())
     self.calib_feedback.percentage = 60
@@ -60,14 +60,14 @@ class VisionSystemCalibrationModule(RobotCommander):
 
     # move +y
     c_pose.position.y += goal.delta
-    self.arm.set_pose_target(c_pose)
+    self.arm.set_pose_target(c_pose,wait_tf=True)
     rospy.sleep(self.sleep_dur)
     pnts.append(self.vision.giv_pnt.get_position())
     self.calib_feedback.percentage = 90
     self.calib_as.publish_feedback(self.calib_feedback)
 
     # return to home position
-    self.arm.set_pose_target(goal.home)
+    self.arm.set_pose_target(goal.home,wait_tf=True)
 
     # perform four point calibration
     self.vision.four_point_calibration(pnts,pose_to_list(o_pose))

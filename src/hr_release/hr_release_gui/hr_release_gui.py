@@ -1,4 +1,3 @@
-from cmath import exp
 import sys, random
 
 from shutil import rmtree
@@ -9,6 +8,7 @@ import rospy,actionlib
 from geometry_msgs.msg import TransformStamped
 from artificial_hands_msgs.msg import *
 from mia_hand_msgs.msg import Mia
+from ur_msgs.msg import IOStates
 
 from hr_release.msg import *
 from hr_release.hr_release_gui.hr_release_gui_main import *
@@ -20,14 +20,15 @@ class HandoverReleaseExperimentGUI(QROSBagManager):
   bag_dir = '/home/penzo/Desktop'
 
   bag_dict = {'wrist_dynamics_data' : WristDynamicsStamped, 
-  'wrist_dynamics_data' : WristDynamicsStamped,
+  'wrist_contact_detection' : DetectionStamped,
   'mia_hand/mia' : Mia, 
-  'vicon/MagicBall/ball' : TransformStamped,
-  'vicon_state/MagicBall/ball' : CartesianTrajectoryPointStamped,
+  'vicon/Receiver/receiver' : TransformStamped,
+  'vicon_state/Receiver/receiver' : CartesianTrajectoryPointStamped,
+  'ur_hardware_interface/io_states' : IOStates,
   }
 
-  r2h_timing = {'slow' : 0.4, 'fast' : 1.6}
-  r2h_release = {'slow' : 1.0, 'fast' : 0.0, 'adaptive' : -1.0}
+  r2h_timing = {'slow' : 1.0, 'fast' : 2.0}
+  r2h_release = {'slow' : 0.4, 'fast' : 0.0, 'adaptive' : -1.0}
   
   block_dict = {'A1' : {'timing' : 'slow', 'release' : 'adaptive'},
   'F11' : {'timing' : 'slow', 'release' : 'slow'},
@@ -119,8 +120,11 @@ class HandoverReleaseExperimentGUI(QROSBagManager):
 
   def on_next_block(self,id):
     self.blocks[id-1].setDisabled(True)
-    self.blocks[id].setEnabled(True)
-    self.tab_widget.setCurrentIndex(id+1)
+    if id >= len(self.blocks):
+      self.tab_widget.setCurrentIndex(1)
+    else:
+      self.blocks[id].setEnabled(True)
+      self.tab_widget.setCurrentIndex(id+1)
   
   @pyqtSlot(dict)
   def on_score_confirmed(self, score_dict):
@@ -200,7 +204,8 @@ class HandoverReleaseExperimentGUI(QROSBagManager):
 
     r2h_handv_goal.max_accel = self.r2h_timing[block['timing']]
     r2h_handv_goal.max_angaccel = self.r2h_timing[block['timing']]
-    r2h_handv_goal.release_duration = self.r2h_release[block['release']]
+    
+    r2h_handv_goal.release_duration = self.r2h_release[block['release']] #used only if release_type is FIXED
 
     if block['release'] == 'adaptive':
       r2h_handv_goal.release_type = r2h_handv_goal.ADAPTIVE
@@ -242,22 +247,22 @@ def main():
   obj_grasp_goal.tool_to_obj.orientation.y = -0.246
   obj_grasp_goal.tool_to_obj.orientation.z = 0.633
   obj_grasp_goal.tool_to_obj.orientation.w = 0.658
-  obj_grasp_goal.hand_preshape.data = [0.1,0.4,0.0]
-  obj_grasp_goal.hand_target.data = [0.4,0.75,0.5]
+  obj_grasp_goal.hand_preshape.data = [0.2,0.6,0.0]
+  obj_grasp_goal.hand_target.data = [0.45,0.9,0.4]
   obj_grasp_goal.delta.z = 0.1
-  obj_grasp_goal.max_accel = 0.8
-  obj_grasp_goal.max_angaccel = 0.8
+  obj_grasp_goal.max_accel = 0.6
+  obj_grasp_goal.max_angaccel = 0.6
   obj_grasp_goal.max_vel = 0.4
   obj_grasp_goal.max_angvel = 0.4
   obj_grasp_goal.alpha = 0.2
 
-  # set home for object recognition
+  # start object_recognition while positioning for reaching
   obj_rec_goal = ObjectRecognitionGoal()
   obj_rec_goal.home = pose_copy(ft_cal_goal.home)
   obj_rec_goal.max_accel = 0.6
   obj_rec_goal.max_angaccel = 0.6
 
-  # set reaching target
+  # continue with offline reaching
   r2h_handv_goal = RobotHumanHandoverReachingGoal()
   r2h_handv_goal.back = pose_copy(ft_cal_goal.home)
   r2h_handv_goal.target_off.position.x = -0.251
@@ -269,7 +274,7 @@ def main():
   r2h_handv_goal.target_off.orientation.w = 0.591
   r2h_handv_goal.stop_time = 0.5
   r2h_handv_goal.sleep = 1
-  r2h_handv_goal.hand_open_pos.data = [0.1,0.4,0.0]
+  r2h_handv_goal.hand_open_pos.data = [0.2,0.6,0.0]
 
   """ Initialize node and GUI """
 

@@ -30,11 +30,11 @@ class ObjectGraspModule(RobotCommander):
     self.hand.set_joint_target_positions([0.2,0.6,0.0],0.6)
 
     # set arm control
+    self.arm.switch_to_cartesian_controller(self.controller)
     self.arm.set_max_accel(goal.max_accel)
     self.arm.set_max_angaccel(goal.max_angaccel)
-    self.arm.set_poly_567_traj_generator()
-    self.arm.switch_to_cartesian_controller(self.controller)
-
+    self.arm.set_poly_345_traj_generator()
+    
     # retrieve target in the reference frame and move arm
     T_OT = pose_to_matrix(goal.tool_to_obj)
     T_BO = pose_to_matrix(self.vision.obj_pnt.get_pose())

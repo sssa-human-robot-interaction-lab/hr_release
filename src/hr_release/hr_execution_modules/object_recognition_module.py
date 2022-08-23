@@ -36,18 +36,18 @@ class ObjectRecognitionModule(RobotCommander):
     self.wrist_dyn.set_publish()
     
     # go to home position
+    self.arm.switch_to_cartesian_controller(self.controller)
     self.arm.set_max_accel(goal.max_accel)
     self.arm.set_max_angaccel(goal.max_angaccel)
-    self.arm.set_poly_567_traj_generator()
-    self.arm.switch_to_cartesian_controller(self.controller)
+    self.arm.set_poly_345_traj_generator()
     self.arm.set_pose_target(goal.home)
-    self.recog_feedback.percentage += 30
+    self.recog_feedback.percentage += 25
     self.recog_as.publish_feedback(self.recog_feedback)
 
     # start to fill wrist_dynamics matrix
     self.wrist_dyn.set_save_dynamics()
     rospy.sleep(self.sleep_dur)
-    self.recog_feedback.percentage += 30
+    self.recog_feedback.percentage += 25
     self.recog_as.publish_feedback(self.recog_feedback)
 
     # perform estimate trajectory
@@ -55,6 +55,13 @@ class ObjectRecognitionModule(RobotCommander):
 
     # build the object inertial model
     self.wrist_dyn.build_model()
+    self.recog_feedback.percentage += 25
+    self.recog_as.publish_feedback(self.recog_feedback)
+
+    # go back to home position
+    self.arm.set_poly_345_traj_generator()
+    self.arm.switch_to_cartesian_controller(self.controller)
+    self.arm.set_pose_target(goal.home)
 
     # stop controllers
     rospy.sleep(self.sleep_dur)
