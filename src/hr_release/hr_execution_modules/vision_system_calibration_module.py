@@ -29,7 +29,7 @@ class VisionSystemCalibrationModule(RobotCommander):
     self.calib_feedback.percentage = 0
 
     # get hand in open position
-    self.hand.set_joint_positions([0.1,0.4,0.2])
+    self.hand.set_joint_target_positions([0.2,0.6,0.0],0.6)
 
     # go to home position
     self.arm.set_max_accel(goal.max_accel)

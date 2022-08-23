@@ -27,7 +27,7 @@ class ObjectGraspModule(RobotCommander):
     self.grasp_feedback.percentage = 0
 
     # get hand in open position
-    self.hand.set_joint_positions(goal.hand_preshape.data)
+    self.hand.set_joint_target_positions([0.2,0.6,0.0],0.6)
 
     # set arm control
     self.arm.set_max_accel(goal.max_accel)
@@ -43,6 +43,9 @@ class ObjectGraspModule(RobotCommander):
     self.arm.set_pose_target(h_pose)
     self.grasp_feedback.percentage += 30
     self.grasp_as.publish_feedback(self.grasp_feedback)
+
+    #get hand in pre-shape
+    self.hand.set_joint_target_positions(goal.hand_preshape.data,0.6)
 
     # fix target pose for grasp
     t_pose = pose_copy(h_pose)
@@ -62,7 +65,7 @@ class ObjectGraspModule(RobotCommander):
 
     # get hand in closed shape and stop control
     self.hand.set_joint_target_positions(target = goal.hand_target.data, goal_time = 1.0)
-    rospy.sleep(self.sleep_dur)
+    # rospy.sleep(self.sleep_dur)
     self.hand.stop()
 
     # go to back position

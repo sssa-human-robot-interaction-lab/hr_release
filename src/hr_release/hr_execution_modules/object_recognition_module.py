@@ -80,14 +80,12 @@ class ObjectRecognitionModule(RobotCommander):
 
       rot = Q[0:3,0:3]
 
-      y = yd*dt + 0.5*ydd*dt*dt
+      y = yd*dt
 
       P = np.zeros((4,4))
       P[0:3,0:3] = np.dot(rot,ts.euler_matrix(y[3],y[4],y[5])[0:3,0:3])
       P[0:3,3] = Q[0:3,3] + np.transpose(np.dot(rot[0:3,0:3],y[0:3]))
       P[3,3] = 1
-
-      yd += ydd*dt
 
       yd[0:3] = np.dot(rot[0:3,0:3],yd[0:3])
       yd[3:] = np.dot(rot[0:3,0:3],yd[3:])

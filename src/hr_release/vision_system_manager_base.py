@@ -106,7 +106,7 @@ class VisionSystem:
 
     self.R = ts.rotation_matrix(0,[0,0,1])
 
-    self.rec_pnt = VisionPoint('receiver','MagicBall/ball',self.vision_cb, self.br)
+    self.rec_pnt = VisionPoint('receiver','Receiver/receiver',self.vision_cb, self.br)
     self.giv_pnt = VisionPoint('giver','Mia/hand',self.vision_cb, self.br)
     self.obj_pnt = VisionPoint('object','TestObject/object',self.vision_cb, self.br)
 

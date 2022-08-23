@@ -49,8 +49,8 @@ def main():
   obj_grasp_goal.tool_to_obj.orientation.y = -0.246
   obj_grasp_goal.tool_to_obj.orientation.z = 0.633
   obj_grasp_goal.tool_to_obj.orientation.w = 0.658
-  obj_grasp_goal.hand_preshape.data = [0.1,0.4,0.0]
-  obj_grasp_goal.hand_target.data = [0.4,0.75,0.5]
+  obj_grasp_goal.hand_preshape.data = [0.2,0.6,0.0]
+  obj_grasp_goal.hand_target.data = [0.45,0.9,0.4]
   obj_grasp_goal.delta.z = 0.1
   obj_grasp_goal.max_accel = 0.6
   obj_grasp_goal.max_angaccel = 0.6
@@ -78,29 +78,46 @@ def main():
   r2h_handv_goal.max_angaccel = 1.4
   r2h_handv_goal.stop_time = 0.5
   r2h_handv_goal.sleep = 1
-  r2h_handv_goal.hand_open_pos.data = [0.1,0.4,0.0]
-  r2h_handv_goal.release_type = r2h_handv_goal.FIXED
-  r2h_handv_goal.release_duration = 1.0 # used only if release type is FIXED
+  r2h_handv_goal.hand_open_pos.data = [0.2,0.6,0.0]
+  r2h_handv_goal.release_type = r2h_handv_goal.ADAPTIVE
+  r2h_handv_goal.release_duration = 0.0 # used only if release type is FIXED
 
   # high level control loop
   while True:
 
     # start or check vision_calibration
-    #vis_cal_cl.send_goal_and_wait(vis_cal_goal)
+    # vis_cal_cl.send_goal_and_wait(vis_cal_goal)
+    # if not vis_cal_cl.get_result().success:
+    #   rospy.logerr('Vision system calibration failed!')
+    #   break
 
     # start or check ft sensor calibration
-    #ft_cal_cl.send_goal_and_wait(ft_cal_goal)
+    ft_cal_cl.send_goal_and_wait(ft_cal_goal)
+    if not ft_cal_cl.get_result().success:
+      rospy.logerr('Sensor calibration failed!')
+      break
     
     # grasp
     obj_grasp_cl.send_goal_and_wait(obj_grasp_goal)
+    if not obj_grasp_cl.get_result().success:
+      rospy.logerr('Grasp failed!')
+      break
     
     # do object recognition
-    #obj_rec_cl.send_goal_and_wait(obj_rec_goal)
+    # obj_rec_cl.send_goal_and_wait(obj_rec_goal)
+    # if not obj_rec_cl.get_result().success:
+    #   rospy.logerr('Object recognition failed!')
+    #   break
 
     # continue with the handover
     r2h_handv_cl.send_goal_and_wait(r2h_handv_goal)
+    if not r2h_handv_cl.get_result().success:
+      rospy.logerr('Handover failed!')
+      break
 
     break
+  
+  rospy.loginfo('bye!')
 
 if __name__ == '__main__':
   main()

@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <launch>
 
-  <arg name="fake_ft" default="true" />
-  <arg name="fake_vis" default="true" />
+  <arg name="fake_ft" default="false" />
+  <arg name="fake_vis" default="false" />
 
   <!-- Launch the wrist dynamics node -->
   <include file="$(find artificial_hands_dynamics)/launch/wrist_dynamics_node.launch">
-    <arg name="rate" value="50"/>
+    <arg name="rate" value="100"/>
   </include>
 
   <!-- Bringup the FT sensor (fake or real hw)-->
