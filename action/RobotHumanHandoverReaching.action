@@ -19,3 +19,4 @@ int64 success
 int64 percentage
 float64 receiver_peak_accel
 float64 distance_to_target
+float64 receiver_accel_norm

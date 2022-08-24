@@ -2,10 +2,6 @@ from threading import Thread, Lock
 
 import rospy, actionlib
 
-from std_msgs.msg import Float64
-from geometry_msgs.msg import Pose
-from cartesian_control_msgs.msg import CartesianTrajectoryPoint
-
 from hr_release.msg import *
 from hr_release.robot_commander import RobotCommander
 
@@ -22,7 +18,6 @@ class RobotHumanHandoverReachingModule(RobotCommander):
     self.controller = cartesian_controller
   
     self.r2h_handv_as = actionlib.SimpleActionServer('/robot_to_human_handover_reaching_offline',RobotHumanHandoverReachingAction,execute_cb=self.r2h_handover_cb,auto_start=False)
-
     self.r2h_handv_as.start()
 
   def r2h_handover_cb(self, goal : RobotHumanHandoverReachingGoal):
@@ -103,19 +98,21 @@ class RobotHumanHandoverReachingModule(RobotCommander):
   def update_receiver_state(self):
 
     self.lock.acquire()
+
+    receiver_pos = self.vision.rec_pnt.get_position()
+    c_position = self.arm.get_current_frame().pose.position
+    self.distance = pow(pow(c_position.x - receiver_pos[0],2)+pow(c_position.y - receiver_pos[1],2)+pow(c_position.z - receiver_pos[2],2),0.5)
     
     x = self.vision.rec_pnt.get_acceleration_norm()
-    if x > self.rec_peak_acc and x < 10:
+    if x > self.rec_peak_acc and x < 10 and self.distance < 1.0:
       self.rec_peak_acc = x
       m = 0.88*x*x -24*x + 352 # receiver acceleration to release duration 
       self.open_dur = -1.094e-05*m*m + 0.00867*m - 1.296 #release duration to hand open goal time
       if self.open_dur < 0:
         self.open_dur = 0.0
 
-    receiver_pos = self.vision.rec_pnt.get_position()
-    c_position = self.arm.get_current_frame().pose.position
-    self.distance = pow(pow(c_position.x - receiver_pos[0],2)+pow(c_position.y - receiver_pos[1],2)+pow(c_position.z - receiver_pos[2],2),0.5)
-
+    self.r2h_handv_feedback.receiver_accel_norm = x
+    self.r2h_handv_feedback.receiver_peak_accel = self.rec_peak_acc
     self.r2h_handv_feedback.distance_to_target = self.distance
     self.r2h_handv_as.publish_feedback(self.r2h_handv_feedback)
 

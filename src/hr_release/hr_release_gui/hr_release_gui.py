@@ -24,7 +24,8 @@ class HandoverReleaseExperimentGUI(QROSBagManager):
   'mia_hand/mia' : Mia, 
   'vicon/Receiver/receiver' : TransformStamped,
   'vicon_state/Receiver/receiver' : CartesianTrajectoryPointStamped,
-  'ur_hardware_interface/io_states' : IOStates,
+  'io_states_stamped' : IOStatesStamped,
+  'robot_to_human_handover_reaching_offline/feedback' : RobotHumanHandoverReachingActionFeedback,
   }
 
   r2h_timing = {'slow' : 1.0, 'fast' : 2.0}
