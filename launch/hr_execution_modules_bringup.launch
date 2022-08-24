@@ -33,4 +33,7 @@
   <!-- Run the low level engine node -->
   <node pkg="hr_release" type="hr_execution_modules_node.py" name="hr_execution_modules_node" output="screen"/>
 
+  <!-- Run the UR io states republisher node (adds timestamp) -->
+  <node pkg="hr_release" type="io_states_republisher_node.py" name="io_states_republisher_node" output="screen"/>
+
 </launch>

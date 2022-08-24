@@ -3,6 +3,7 @@ project(hr_release)
 
 find_package(catkin REQUIRED COMPONENTS
   std_msgs
+  ur_msgs
   geometry_msgs
   cartesian_control_msgs
   trajectory_msgs
@@ -12,6 +13,11 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_python_setup()
+
+add_message_files(
+  FILES
+  IOStatesStamped.msg
+)
 
 add_action_files(
   FILES
@@ -25,6 +31,7 @@ add_action_files(
 generate_messages(
   DEPENDENCIES
   std_msgs
+  ur_msgs
   geometry_msgs
   cartesian_control_msgs
   trajectory_msgs
@@ -44,5 +51,6 @@ catkin_install_python(PROGRAMS
   scripts/hr_fake_vision_system_node.py
   scripts/hr_release_gui_node.py
   scripts/hr_release_node.py
+  scripts/io_states_republisher_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
