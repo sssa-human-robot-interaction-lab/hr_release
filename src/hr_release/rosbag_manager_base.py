@@ -21,13 +21,13 @@ class ROSBagManagerBase:
   def bag_create(self, bag_dict : dict):
     subs = []
     for topic in bag_dict.keys():
-      subs.append(rospy.Subscriber(topic,bag_dict[topic],partial(self.bag_write, topic)))
+      subs.append(rospy.Subscriber(topic,bag_dict[topic],partial(self.bag_write, topic = topic)))
   
   def bag_write(self, msg, topic):
+    self.__lock.acquire()
     if self.__bag_record:
-      self.__lock.acquire()
       self.__bag.write(topic,msg)
-      self.__lock.release()
+    self.__lock.release()
 
   def bag_mkdir(self, name : str, readme : str = None) -> str:
     self.__bag_dir = name + "_{0}".format(strftime("%Y%m%d_%H%M%S"))
