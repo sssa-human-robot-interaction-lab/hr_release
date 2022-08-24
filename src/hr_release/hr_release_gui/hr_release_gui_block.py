@@ -110,8 +110,10 @@ class HandoverReleaseExperimentBlock(QWidget):
     self.score_confirm_button.clicked.connect(self.on_confirm_score)
 
     self.score_combo_box = QComboBox()
-    for score in range(-3,4):
+    self.score_combo_box.addItem('-3 (delay)')
+    for score in range(-2,3):
       self.score_combo_box.addItem(str(score))
+    self.score_combo_box.addItem('3 (early)')
 
     score_label = QLabel('Block score:')
     score_label.setAlignment(Qt.AlignCenter | Qt.AlignRight)
