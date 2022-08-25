@@ -1,7 +1,6 @@
-from hr_release.rosbag_manager_base import QROSBagManager
 from hr_release.hr_release_gui.hr_release_gui_base import *
 
-class HandoverReleaseExperimentCondition(QROSBagManager):
+class HandoverReleaseExperimentCondition(QROSUtils):
 
   stored = pyqtSignal(int)
   unstored = pyqtSignal(int)

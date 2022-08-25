@@ -19,9 +19,11 @@ class ROSBagManagerBase:
     self.__bag_record = False
 
   def bag_create(self, bag_dict : dict):
+    self.__lock.acquire()
     subs = []
     for topic in bag_dict.keys():
       subs.append(rospy.Subscriber(topic,bag_dict[topic],partial(self.bag_write, topic = topic)))
+    self.__lock.release()
   
   def bag_write(self, msg, topic):
     self.__lock.acquire()
@@ -38,25 +40,22 @@ class ROSBagManagerBase:
     return self.__bag_dir
 
   def bag_open(self, name : str) -> str:
+    self.__lock.acquire()
     self.__bag_name = self.__bag_dir + "/{}.bag".format(name)
     self.__bag = rosbag.Bag(self.__bag_name,'w')
     rospy.sleep(0.5)
     self.__bag_record = True
+    self.__lock.release()
     return self.__bag_name
 
   def bag_close(self):
+    self.__lock.acquire()
     self.__bag_record = False
     self.__bag.close()
+    self.__lock.release()
 
   def bag_remove(self, name : str = None):
     if name is None:
       remove(self.__bag_name)
       return
     remove(name)
-
-class QROSBagManager(QWidget):
-
-  def __init__(self) -> None:
-    super().__init__()    
-    
-    self.bag = ROSBagManagerBase()

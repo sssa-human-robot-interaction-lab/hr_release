@@ -7,6 +7,16 @@ from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 
 from artificial_hands_py.artificial_hands_py_base import *
 
+from hr_release.rosbag_manager_base import ROSBagManagerBase
+from hr_release.io_states_republisher import IOStatesRepublisher
+
+def q_info_dialog(parent,str) -> bool:
+    dlg = QMessageBox(parent)
+    dlg.setText(str)
+    dlg.setStandardButtons(QMessageBox.Ok)
+    dlg.setIcon(QMessageBox.Information)
+    return dlg.exec() == QMessageBox.Ok
+
 def q_confirm_dialog(parent,str) -> bool:
     dlg = QMessageBox(parent)
     dlg.setText(str)
@@ -55,3 +65,12 @@ class QResultButton(QPushButton):
     self.set_button_rgb([255,0,0,self.alpha])
     self.result = False
     self.success = False
+
+class QROSUtils(QWidget):
+
+  def __init__(self) -> None:
+    super().__init__()    
+    
+    self.bag = ROSBagManagerBase()
+
+    self.io_states = IOStatesRepublisher()

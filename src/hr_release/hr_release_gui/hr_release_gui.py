@@ -8,14 +8,13 @@ import rospy,actionlib
 from geometry_msgs.msg import TransformStamped
 from artificial_hands_msgs.msg import *
 from mia_hand_msgs.msg import Mia
-from ur_msgs.msg import IOStates
+from ur_msgs.msg import Analog
 
 from hr_release.msg import *
 from hr_release.hr_release_gui.hr_release_gui_main import *
 from hr_release.hr_release_gui.hr_release_gui_block import *
-from hr_release.rosbag_manager_base import QROSBagManager
 
-class HandoverReleaseExperimentGUI(QROSBagManager):
+class HandoverReleaseExperimentGUI(QROSUtils):
 
   bag_dir = '/home/penzo/Desktop'
 
@@ -74,6 +73,8 @@ class HandoverReleaseExperimentGUI(QROSBagManager):
     self.main.calib_vision_button.clicked.connect(self.on_calib_vision)
     self.main.object_grasp_button.clicked.connect(partial(self.on_grasp_object, self.main.object_grasp_button))
     self.main.object_recog_button.clicked.connect(self.on_rec_object)
+    self.main.reach_fast_button.clicked.connect(partial(self.on_reach_to_handover, self.main.reach_fast_button, 'A2'))
+    self.main.reach_slow_button.clicked.connect(partial(self.on_reach_to_handover, self.main.reach_slow_button, 'A1'))
     
     self.setLayout(main_layout)
 
@@ -88,9 +89,11 @@ class HandoverReleaseExperimentGUI(QROSBagManager):
       self.block_confirm_dict =  {'A1' : False, 'F11' : False, 'F12' : False, 'A2' : False, 'F21' : False, 'F22' : False}
 
       block_names = list(self.block_dict.keys())
+      block_order = ''
       random.shuffle(block_names)
       for block_name in block_names:
         self.blocks.append(HandoverReleaseExperimentBlock(self,block_name,6))
+        block_order += block_name + ','
       
       block : HandoverReleaseExperimentBlock
       for block in self.blocks:
@@ -108,10 +111,23 @@ class HandoverReleaseExperimentGUI(QROSBagManager):
       for block in self.blocks[1:]:
         block.setDisabled(True)
 
-      readme = "{name}\n{age}\n{gend}".format(name = self.main.subject_name_line.text(), 
-      age = str(self.main.subject_age_spinbox.value()), gend = self.main.subject_gender_spinbox.currentText())
+      readme = "{name}\n{age}\n{gend}\n{order}".format(name = self.main.subject_name_line.text(), 
+      age = str(self.main.subject_age_spinbox.value()), gend = self.main.subject_gender_spinbox.currentText(),
+      order = block_order)
       
       self.subject_dir = self.bag.bag_mkdir(self.bag_dir+'/{}'.format(self.main.subject_name_line.text()),readme)
+
+      analog_out_0 : Analog = self.io_states.analog_out[0]
+      while analog_out_0.domain != Analog.VOLTAGE or analog_out_0.state < 4.0:
+        q_info_dialog(self,'Check analog output!')
+        analog_out_0 = self.io_states.analog_out[0]
+
+      analog_in_0 : Analog = self.io_states.analog_in[0]
+      analog_in_1 : Analog = self.io_states.analog_in[1]
+      while analog_in_0.domain != Analog.VOLTAGE or analog_in_1.domain != Analog.VOLTAGE:
+        q_info_dialog(self,'Check analog input!')
+        analog_in_0 = self.io_states.analog_in[0]
+        analog_in_1 = self.io_states.analog_in[1]
   
   def closeEvent(self, event):
     if self.on_terminate_subject():
@@ -251,8 +267,8 @@ def main():
   obj_grasp_goal.hand_preshape.data = [0.2,0.6,0.0]
   obj_grasp_goal.hand_target.data = [0.45,0.9,0.4]
   obj_grasp_goal.delta.z = 0.1
-  obj_grasp_goal.max_accel = 0.6
-  obj_grasp_goal.max_angaccel = 0.6
+  obj_grasp_goal.max_accel = 0.8
+  obj_grasp_goal.max_angaccel = 0.8
   obj_grasp_goal.max_vel = 0.4
   obj_grasp_goal.max_angvel = 0.4
   obj_grasp_goal.alpha = 0.2

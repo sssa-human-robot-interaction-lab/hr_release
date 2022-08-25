@@ -51,6 +51,5 @@ catkin_install_python(PROGRAMS
   scripts/hr_fake_vision_system_node.py
   scripts/hr_release_gui_node.py
   scripts/hr_release_node.py
-  scripts/io_states_republisher_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
