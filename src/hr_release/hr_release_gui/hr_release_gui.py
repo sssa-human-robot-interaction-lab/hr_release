@@ -138,7 +138,7 @@ class HandoverReleaseExperimentGUI(QROSUtils):
   def on_next_block(self,id):
     self.blocks[id-1].setDisabled(True)
     if id >= len(self.blocks):
-      self.tab_widget.setCurrentIndex(1)
+      self.tab_widget.setCurrentIndex(0)
     else:
       self.blocks[id].setEnabled(True)
       self.tab_widget.setCurrentIndex(id+1)

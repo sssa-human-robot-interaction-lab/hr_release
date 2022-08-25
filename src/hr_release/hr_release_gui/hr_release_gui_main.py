@@ -18,7 +18,7 @@ class HandoverReleaseExperimentMainControl(QWidget):
     self.reach_fast_button.set_button_rgb([0,255,0,50])
     self.reach_slow_button.set_button_rgb([0,255,0,50])
 
-    #self.set_disabled()
+    self.set_disabled()
 
     self.calib_vision_button.setEnabled(True)
     
