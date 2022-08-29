@@ -10,6 +10,8 @@ from artificial_hands_py.artificial_hands_py_base import singleton
 class IOStatesRepublisher:
 
   def __init__(self) -> None:
+    self.__analog_in_th = 1.0
+    self.analog_in_active = False
     self.analog_in = []
     self.analog_out = []
     self.__msg = IOStatesStamped()
@@ -22,3 +24,9 @@ class IOStatesRepublisher:
     self.__pub.publish(self.__msg)
     self.analog_out = msg.analog_out_states.copy()
     self.analog_in = msg.analog_in_states.copy()
+    if self.analog_in_active == False:
+      if self.analog_in[0].state > self.__analog_in_th and self.analog_in[1].state > self.__analog_in_th:
+        self.analog_in_active = True
+
+  def reset(self):
+    self.analog_in_active = False

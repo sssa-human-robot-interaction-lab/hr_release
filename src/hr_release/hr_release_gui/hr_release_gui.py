@@ -28,7 +28,7 @@ class HandoverReleaseExperimentGUI(QROSUtils):
   }
 
   r2h_timing = {'slow' : 1.0, 'fast' : 2.0}
-  r2h_release = {'slow' : 0.4, 'fast' : 0.0, 'adaptive' : -1.0}
+  r2h_release = {'slow' : 0.6, 'fast' : 0.2, 'adaptive' : -1.0}
   
   block_dict = {'A1' : {'timing' : 'slow', 'release' : 'adaptive'},
   'F11' : {'timing' : 'slow', 'release' : 'slow'},
@@ -99,8 +99,7 @@ class HandoverReleaseExperimentGUI(QROSUtils):
       for block in self.blocks:
         id = self.tab_widget.addTab(block,block.block_name)
         self.blocks_id.append(id)
-        block.score_confirmed.connect(self.on_score_confirmed)
-        block.next_block_button.clicked.connect(partial(self.on_next_block,id))
+        block.completed.connect(partial(self.on_block_completed,id = id))
       
       for block in self.blocks:
         condition : HandoverReleaseExperimentCondition
@@ -144,11 +143,12 @@ class HandoverReleaseExperimentGUI(QROSUtils):
       self.tab_widget.setCurrentIndex(id+1)
   
   @pyqtSlot(dict)
-  def on_score_confirmed(self, score_dict):
+  def on_block_completed(self, score_dict, id):
     with open(self.subject_dir+'/SCORES_active.txt','a') as f:
-      f.write("{name},{score},".format(name=score_dict['block_name'],score=score_dict['score']))
-    self.block_scores_dict[score_dict['block_name']] = score_dict['score']
+      f.write("{name} : {scores}\n".format(name=score_dict['block_name'],scores=score_dict['scores']))
+    self.block_scores_dict[score_dict['block_name']] = score_dict['scores']
     self.block_confirm_dict[score_dict['block_name']] = True
+    self.on_next_block(id)
   
   def terminate_subject(self):
     
@@ -183,11 +183,12 @@ class HandoverReleaseExperimentGUI(QROSUtils):
       with open(self.subject_dir+'/SCORES.txt','w') as f:
         for block_name in self.block_scores_dict.keys():
           if self.block_confirm_dict[block_name]:
-            f.write("{name},{score},".format(name=block_name,score=self.block_scores_dict[block_name]))
+            f.write("{name} : {scores}\n".format(name=block_name,scores=self.block_scores_dict[block_name]))
       
-      remove(self.subject_dir+'/SCORES_active.txt')
-   
-      self.terminate_subject()
+      try:
+        remove(self.subject_dir+'/SCORES_active.txt')
+      finally:
+        self.terminate_subject()
 
       return True
     
@@ -290,7 +291,7 @@ def main():
   r2h_handv_goal.target_off.orientation.z = -0.170
   r2h_handv_goal.target_off.orientation.w = 0.591
   r2h_handv_goal.stop_time = 0.5
-  r2h_handv_goal.sleep = 1
+  r2h_handv_goal.sleep = 2.5
   r2h_handv_goal.hand_open_pos.data = [0.2,0.6,0.0]
 
   """ Initialize node and GUI """
