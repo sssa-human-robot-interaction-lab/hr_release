@@ -104,7 +104,7 @@ class RobotHumanHandoverReachingModule(RobotCommander):
     x = self.vision.rec_pnt.get_acceleration_norm()
     if x > self.rec_peak_acc and x < 10 and self.distance < 1.0:
       self.rec_peak_acc = x
-      m = 0.98*x*x -25.05*x + 301.4 # receiver acceleration to release duration 
+      m = -0.2771*x*x -12.44*x + 301.4 # receiver acceleration to release duration 
       self.open_dur = -1.249e-05*m*m + 0.008259*m - 0.7545 #release duration to hand open goal time
       if self.open_dur < 0:
         self.open_dur = 0.0
